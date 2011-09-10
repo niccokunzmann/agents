@@ -2,11 +2,9 @@
 from test import *
 
 from objects.GlobalObject import GlobalObject
+from TestGlobalObject import TestGlobalObject
 
-class TestGlobalObject(GlobalObject):
-
-    def __init__(self, name, *args):
-        self.args = args
+import test_GlobalObject
 
 class test_GlobalObject(unittest.TestCase):
 
@@ -40,9 +38,43 @@ class test_GlobalObject(unittest.TestCase):
         self.assertEqual(o, o2)
         self.assertTrue(o is o2)
 
+    def test_dedicated(self):
+        s = launchDedicatedTest('test_GlobalObject_dedicated.py')
+        o = TestGlobalObject('test_dedicated')
+        s.write(o)
+        s.flush()
+        self.assertTrue(s.printOnFail())
+        try:
+            self.assertEqual(o.__class__, s.read()[0]) #1
+            self.assertEqual(o.__reduce__()[0], s.read()[0]) #2
+            self.assertEqual(o.__reduce__()[1], s.read()[0]) #3
+            o2 = s.read()[0] #4
+        except :
+            ty, er, tb = sys.exc_info()
+            raise ty, er, tb
+        self.assertEqual(o, o2)
+        self.assertTrue(o is o2)
+        
 
 
+def replace_import():
+    try:    __imp_old = __builtins__['__import__']
+    except: __imp_old = __builtins__.__import__
+    def __import__(*args, **kw):
+        print '__import__', args, kw,
+        try:
+            r= __imp_old(*args, **kw)
+        except:
+            print 'fail'
+            raise
+        else:
+            print 'ok'
+        return r
+        
 
+    try:    __builtins__['__import__'] = __import__
+    except: __builtins__.__import__ = __import__
+    
 def test_module():
     unittest.main(exit = False)
 

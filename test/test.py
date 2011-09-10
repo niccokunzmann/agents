@@ -9,10 +9,13 @@ import os
 import traceback
 
 import pickle
+
 try:
     import io
 except ImportError:
     import StringIO as io
+
+from dedicatedTest import *
 
 def pickle_unpickle(obj):
     s = io.BytesIO()

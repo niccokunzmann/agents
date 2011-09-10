@@ -55,7 +55,7 @@ class StringStream(Stream):
             if 0 < sizehint <= total:
                 break
             line = self.readline()
-        return lines
+        return lines # also in FileStream
 
     def update(self):
         pass

@@ -34,7 +34,16 @@ class GlobalObject(object):
     def __reduce__(self):
         return _loadGlobalObject, (self.__key,)
 
+    def getName(self):
+        return self.__key[1]
 
-def _loadGlobalObject(key):
-    return GlobalObject.loadObject(key)
+
+def _loadGlobalObject(key, args = (), kw = {}):
+    l = []
+    obj = GlobalObject.loadObject(key, l)
+    if obj is l:
+        return key[0](key[1], *args, **kw)
+    return obj
+    
+    
 

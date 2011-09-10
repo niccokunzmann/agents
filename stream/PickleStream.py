@@ -46,7 +46,7 @@ class PickleStream(Stream):
         self.stream.update()
         o = self._unpickler.load()
         if o is not noValue:
-            self.buffer.append(o)
+            self._buffer.append(o)
 
     def write(self, obj):
         return self._pickler.dump(obj)
