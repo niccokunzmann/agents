@@ -43,5 +43,10 @@ class test_GlobalObject(unittest.TestCase):
 
 
 
-if __name__ == '__main__':
+def test_module():
     unittest.main(exit = False)
+
+if __name__ == '__main__':
+    test_module()
+
+    
