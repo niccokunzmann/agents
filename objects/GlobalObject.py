@@ -13,27 +13,28 @@ class GlobalObject(object):
 
     '''
 
-    __objects = {}
+    __objects = {} # name, type : obj
     __lock = thread.allocate_lock()
 
     def __new__(cls, name, *args, **kw):
+        key = (cls, name)
+        l = []
         with cls.__lock:
-            l = []
-            obj = cls.__objects.get(name, l)
+            obj = cls.__objects.get(key, l)
             if obj is l:
                 obj = object.__new__(cls, *args, **kw)
-                cls.__objects[name] = obj
-                obj.__name = name
+                cls.__objects[key] = obj
+                obj.__key = key
         return obj
 
     @classmethod
-    def loadObject(cls, name, *args):
-        return cls.__objects.get(name, *args)
+    def loadObject(cls, key, *args):
+        return cls.__objects.get(key, *args)
 
     def __reduce__(self):
-        return _loadGlobalObject, (self.__name,)
+        return _loadGlobalObject, (self.__key,)
 
 
-def _loadGlobalObject(name):
-    return GlobalObject.loadObject(name)
+def _loadGlobalObject(key):
+    return GlobalObject.loadObject(key)
 

@@ -1,5 +1,7 @@
 from Stream import Stream
 
+import pickle
+
 class NoValue(object):
     ''' Singleton Object noValue
 
@@ -27,17 +29,17 @@ class PickleStream(Stream):
         self._buffer = []
     
     def _setPickler(self):
-        self._pickler = pickle.Pickler(self._stream)
+        self._pickler = pickle.Pickler(self.stream)
     
     def _setUnpickler(self):
-        self._unpickler = pickle.Unpickler(self._stream)
+        self._unpickler = pickle.Unpickler(self.stream)
 
     def read(self, size = None):
         'size is ignored'
-        if not self.buffer:
+        if not self._buffer:
             self.update()
-        r = self.buffer[:]
-        self.buffer = []
+        r = self._buffer[:]
+        self._buffer = []
         return r
 
     def update(self):
