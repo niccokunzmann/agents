@@ -21,6 +21,10 @@ tests_succeded_regex = re.compile('(?s).*\nOK[^\n]*$')
 
 
 class DedicatedTestStream(FileStream):
+    ''' an stream for dedicated tests
+before the object is deleted either printOnFail() or noPrintOnFail()
+shall be called
+'''
 
     def __init__(self, picklestream, pipe, name = ''):
         FileStream.__init__(self, picklestream)
@@ -37,20 +41,21 @@ return succeeded'''
         self.__printed = True
         stdout, stderr = self.pipe.communicate()
         if tests_succeded_regex.match(stderr) is None:
-            sys.stderr.write("--------> error output starting for %s ------->\n" % self.name)
+            sys.stderr.write("--------> error output starting %s ------->\n" % self.name)
             sys.stderr.write(stderr)
             if not stderr:
                 sys.stderr.write('nothing to be seen - test did not halt')
-            sys.stderr.write("<--------- error output ending for %s <--------\n" % self.name)
+            sys.stderr.write("<--------- error output ending %s <--------\n" % self.name)
             if stdout:
-                sys.stdout.write("--------> output starting for %s ------->\n" % self.name)
+                sys.stdout.write("--------> output starting %s ------->\n" % self.name)
                 sys.stdout.write(stdout)
-                sys.stdout.write("<--------- output ending for %s <--------\n" % self.name)
+                sys.stdout.write("<--------- output ending %s <--------\n" % self.name)
             return False
         return True
 
     def noPrintOnFail(self):
         self.__printed = True
+        return True
 
     def __del__(self):
         if not self.__printed:
@@ -83,7 +88,8 @@ def launchDedicatedTest(filename, *tests):
     return DedicatedTestStream(picklestream, pipe, filename)
 
 def beDedicatedTest():
-    '''start this method before unittest.main() to get a pickle stream'''
+    ''' this method is used in tests started by launchDedicatedTest
+start this method before unittest.main() to get a pickle stream'''
     port = int(sys.argv.pop(1))
     sock = socket.socket()
     sock.connect(('localhost', port))
@@ -113,7 +119,15 @@ if the echo fails the default value will be retruned
 TIMEOUT = 4
 
 def doTimeout(function, *errors, **kw):
-    timeout = TIMEOUT + time.time()
+    '''doTimeout(function, error1, ..., default = None, timeout = TIMEOUT)
+retry to call the function and return the value
+call doTimeout(..., timeout = seconds, ...) to set the timeout
+the timeout defaults to TIMEOUT
+doTimeout(..., default = value, ...) determines the default return value
+if the function did not succeed
+'''
+    tm = kw.get('timeout', TIMEOUT)
+    timeout = tm + time.time()
     while timeout > time.time():
         try:
             return function()
