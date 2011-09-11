@@ -57,6 +57,25 @@ class test_dedicatedTest(unittest.TestCase):
     def test_6(self):
         self.dedicated_equals(objectList[6])
 
+    def test_start_TestCaseClass(self):
+        s = launchDedicatedTest('test_echo_dedicated.py', 'test_echo_dedicated')
+        s.write(1)
+        s.flush()
+        self.assertTrue(s.printOnFail())
+        s.update()
+        o = s.read()[0]
+        self.assertEqual(1, o, 'objects equal')
+        
+    def test_start_TestCaseMethod(self):
+        s = launchDedicatedTest('test_echo_dedicated.py', \
+                                'test_echo_dedicated.test_echo')
+        s.write(1)
+        s.flush()
+        self.assertTrue(s.printOnFail())
+        s.update()
+        o = s.read()[0]
+        self.assertEqual(1, o, 'objects equal')
+
 def test_module():
     unittest.main(exit = False)
 
