@@ -58,7 +58,35 @@ class test_GlobalObject(unittest.TestCase):
             raise ty, er, tb
         self.assertEqual(o, o2)
         self.assertTrue(o is o2)
-        
+
+    def test_setDefaultAttribute(self):
+        o = TestGlobalObject('test_setDefaultAttribute')
+        o.default.x = 2
+        self.assertEqual(2, o.x)
+        o.default.x = 5
+        self.assertEqual(2, o.x)
+        o.x = 88
+        self.assertEqual(88, o.x)
+
+        o.randomAttribute = 88
+        self.assertEqual(88, o.randomAttribute)
+
+    def test_setDefaultAttribute_after(self):
+        o = TestGlobalObject('test_setDefaultAttribute_after')
+        o.x = 5
+        o.default.x = 2
+        self.assertEqual(5, o.x)
+
+    def test_setDefaultAttribute_set(self):
+        o = TestGlobalObject('test_setDefaultAttribute_set')
+        self.assertFalse(o.default.nana)
+        o.default.nana = 2
+        self.assertTrue(o.default.nana)
+        self.assertEqual(2, o.nana)
+
+    def test_name(self):
+        o = TestGlobalObject('test_name')
+        self.assertEqual('test_name', o.getName())
 
 
 def replace_import():
@@ -80,7 +108,7 @@ def replace_import():
     except: __builtins__.__import__ = __import__
     
 def test_module():
-    unittest.main(exit = False, verbosity = 2)
+    unittest.main(exit = False, verbosity = 1)
 
 if __name__ == '__main__':
     test_module()
