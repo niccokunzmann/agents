@@ -11,6 +11,10 @@ class test_echo_dedicated(unittest.TestCase):
         print 'obj:', obj
         ps.write(obj)
         ps.flush()
+        return obj
+
+    def test_echo_inlist(self):
+        obj = self.test_echo()
         try:
             self.assertIn(obj, objectList, 'unexpected object received')
         except RuntimeError:

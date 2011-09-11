@@ -1,11 +1,14 @@
 from test import *
 
-from test_GlobalObject import TestGlobalObject
+from test_GlobalObject import TestGlobalObject, GlobalObject
 
 class test_GlobalObject_dedicated(unittest.TestCase):
 
+    def newObject(self, name, *args):
+        return GlobalObject(name, *args)
+
     def test_unique(self):
-        o2 = TestGlobalObject('test_dedicated')
+        o2 = self.newObject('test_dedicated')
         ps.write(o2.__class__)
         ps.write(o2.__reduce__()[0])
         ps.write(o2.__reduce__()[1])
@@ -23,9 +26,14 @@ class test_GlobalObject_dedicated(unittest.TestCase):
     def test_fail(self):
         self.fail()
 
+class test_GlobalObject_dedicated_subclass(test_GlobalObject_dedicated):
+    
+    def newObject(self, name, *args):
+        return TestGlobalObject(name, *args)
+
+
 
 if __name__ == '__main__':
-##    suite = unittest.TestSuite(())
     ps = beDedicatedTest()
     ps.update()
     o = ps.read()

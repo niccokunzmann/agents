@@ -39,6 +39,8 @@ return succeeded'''
         if tests_succeded_regex.match(stderr) is None:
             sys.stderr.write("--------> error output starting for %s ------->\n" % self.name)
             sys.stderr.write(stderr)
+            if not stderr:
+                sys.stderr.write('nothing to be seen - test did not halt')
             sys.stderr.write("<--------- error output ending for %s <--------\n" % self.name)
             if stdout:
                 sys.stdout.write("--------> output starting for %s ------->\n" % self.name)
@@ -55,6 +57,7 @@ return succeeded'''
             sys.stdout.write('%s object deleted without print' % self)
 
 def launchDedicatedTest(filename, *tests):
+    '''launch a dedicated test from a filename, launch all tests or if given these tests'''
     if not os.path.exists(filename):
         filename = os.path.join(os.path.split(sys.argv[0])[0], filename)
     s = socket.socket()
@@ -80,6 +83,7 @@ def launchDedicatedTest(filename, *tests):
     return DedicatedTestStream(picklestream, pipe, filename)
 
 def beDedicatedTest():
+    '''start this method before unittest.main() to get a pickle stream'''
     port = int(sys.argv.pop(1))
     sock = socket.socket()
     sock.connect(('localhost', port))
@@ -87,6 +91,24 @@ def beDedicatedTest():
     socketstream = (SocketStream(sock))
     picklestream = PickleStream(FileStream(socketstream))
     return picklestream
+
+def dedicated_echo(obj, default = None, test = 'test_echo_dedicated.test_echo'):
+    '''launch a dedicated echo program that echos back the object
+if the echo fails the default value will be retruned
+'''
+    s = launchDedicatedTest('test_echo_dedicated.py', \
+                            test)
+    s.write(obj)
+    s.flush()
+    try:
+        b = s.printOnFail()
+        if not b:
+            return default
+    except:
+        ty, er, tb = sys.exc_info()
+        raise ty, er, tb
+    s.update()
+    return s.read()[0]
 
 TIMEOUT = 4
 

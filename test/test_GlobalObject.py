@@ -8,39 +8,33 @@ import test_GlobalObject
 
 class test_GlobalObject(unittest.TestCase):
 
-    def test_create(self):
-        o = GlobalObject('test_create')
+    def newObject(self, name, *args):
+        return GlobalObject(name, *args)
 
-    def test_create_subclass(self):
-        l = []
-        o = TestGlobalObject('test_create_subclass', l)
-        l2 = o.args[0]
-        self.assertTrue(l2 is l)
+    def test_create(self):
+        o = self.newObject('test_create')
 
     def test_unique(self):
-        o = TestGlobalObject('test_unique')
-        o2 = TestGlobalObject('test_unique')
-        
-        self.assertEqual(o, o2)
-        self.assertTrue(o is o2)
-
-    def test_pickle_subclass(self):
-        o = TestGlobalObject('test_pickle_subclass')
-        o2 = pickle_unpickle(o)
+        o = self.newObject('test_unique')
+        o2 = self.newObject('test_unique')
         
         self.assertEqual(o, o2)
         self.assertTrue(o is o2)
     
     def test_pickle(self):
-        o = GlobalObject('test_pickle')
+        o = self.newObject('test_pickle')
         o2 = pickle_unpickle(o)
         
         self.assertEqual(o, o2)
         self.assertTrue(o is o2)
 
     def test_dedicated(self):
-        s = launchDedicatedTest('test_GlobalObject_dedicated.py')
-        o = TestGlobalObject('test_dedicated')
+        s = launchDedicatedTest('test_GlobalObject_dedicated.py', \
+                        'test_GlobalObject_dedicated.test_unique')
+        self._test_dedicated(s)
+        
+    def _test_dedicated(self, s):
+        o = self.newObject('test_dedicated')
         s.write(o)
         s.flush()
         self.assertTrue(s.printOnFail())
@@ -60,7 +54,7 @@ class test_GlobalObject(unittest.TestCase):
         self.assertTrue(o is o2)
 
     def test_setDefaultAttribute(self):
-        o = TestGlobalObject('test_setDefaultAttribute')
+        o = self.newObject('test_setDefaultAttribute')
         o.default.x = 2
         self.assertEqual(2, o.x)
         o.default.x = 5
@@ -72,21 +66,39 @@ class test_GlobalObject(unittest.TestCase):
         self.assertEqual(88, o.randomAttribute)
 
     def test_setDefaultAttribute_after(self):
-        o = TestGlobalObject('test_setDefaultAttribute_after')
+        o = self.newObject('test_setDefaultAttribute_after')
         o.x = 5
         o.default.x = 2
         self.assertEqual(5, o.x)
 
     def test_setDefaultAttribute_set(self):
-        o = TestGlobalObject('test_setDefaultAttribute_set')
+        o = self.newObject('test_setDefaultAttribute_set')
         self.assertFalse(o.default.nana)
         o.default.nana = 2
         self.assertTrue(o.default.nana)
         self.assertEqual(2, o.nana)
 
     def test_name(self):
-        o = TestGlobalObject('test_name')
+        o = self.newObject('test_name')
         self.assertEqual('test_name', o.getName())
+
+class test_GlobalObject_subclass(test_GlobalObject):
+    
+    def newObject(self, name, *args):
+        return TestGlobalObject(name, *args)
+
+    def test_create_arg(self):
+        l = []
+        o = self.newObject('test_create', l)
+        self.assertEqual(o.args, (l,))
+        self.assertTrue(o.args[0] is l)
+
+    def test_dedicated(self):
+        s = launchDedicatedTest('test_GlobalObject_dedicated.py', \
+                    'test_GlobalObject_dedicated_subclass.test_unique')
+        self._test_dedicated(s)
+        
+
 
 
 def replace_import():

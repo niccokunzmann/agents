@@ -17,29 +17,13 @@ class test_dedicatedTest(unittest.TestCase):
 
     
     def dedicated_equals(self, obj):
-        if debug:print 0
-        s = launchDedicatedTest('test_echo_dedicated.py')
-        if debug:print 1
-        s.write(obj)
-        s.flush()
-        if debug:print 2
-        try:
-            if debug:print 3
-            b = s.printOnFail()
-            if debug:print 4
-            self.assertTrue(b)
-        except:
-            ty, er, tb = sys.exc_info()
-            raise ty, er, tb
-        if debug:print 5
-        s.update()
-        o2 = s.read()[0]
-        if debug:print 6
+        l = []
+        o2 = dedicated_echo(obj, l, test = 'test_echo_dedicated.test_echo_inlist')
+        self.assertFalse(o2 is l, 'the echo of the object %s failed' % obj)
         try:
             self.assertEqual(obj, o2, 'objects equal')
         except RuntimeError:
             self.assertTrue(True)
-        if debug:print 7
         return o2
 
     def test_0(self):
@@ -58,7 +42,8 @@ class test_dedicatedTest(unittest.TestCase):
         self.dedicated_equals(objectList[6])
 
     def test_start_TestCaseClass(self):
-        s = launchDedicatedTest('test_echo_dedicated.py', 'test_echo_dedicated')
+        s = launchDedicatedTest('test_echo_dedicated.py', \
+                                'test_echo_dedicated.test_echo')
         s.write(1)
         s.flush()
         self.assertTrue(s.printOnFail())
