@@ -17,19 +17,25 @@ class CachingStringStream(Stream):
         self._write_buf.append(value)
         self._write_len+= len(value)
         if self._write_len > self._bufsize > -1:
-            self.flush()
+            return self.flush()
 
     def flush(self):
-        self.stream.write(str().join(self._write_buf))
-        self._write_buf = []
-        
+        s = str().join(self._write_buf)
+        i = self.stream.write(s)
+        if type(i) is int: 
+            self._write_buf = [s[i:]]
+            self._write_len = len(s) - i
+        else:
+            self._write_buf = []
+            self._write_len = 0
         self.stream.flush()
+        return i
 
     def update(self):
         if self._bufsize == -1:
             s = self.stream.read()
         else:
-            l = self._read_len - self._bufsize
+            l = self._bufsize - self._read_len
             if l <= 0:
                 return
             s = self.stream.read(l)
