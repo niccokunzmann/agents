@@ -9,7 +9,7 @@ class StringStream(Stream):
     def read(self, size= None):
         if size is None:
             s= self.string[self.index:]
-            self.index= len(s)
+            self.index= len(self.string)
             return s
         s= self.string[self.index: self.index + size]
         self.index += len(s)

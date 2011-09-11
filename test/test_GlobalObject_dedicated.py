@@ -27,8 +27,10 @@ class test_GlobalObject_dedicated(unittest.TestCase):
 if __name__ == '__main__':
 ##    suite = unittest.TestSuite(())
     ps = beDedicatedTest()
+    ps.update()
     o = ps.read()
     while not o:
+        ps.update()
         o = ps.read()
     o = o[0]
     unittest.main(exit = False)

@@ -9,9 +9,9 @@ class NoValue(object):
     def __reduce__(self):
         return 'noValue'
 
-    def __call__(*args):
+    def __call__(self, *args, **kw):
         '''this call does nothing'''
-        pass
+        return self
 
 noValue = NoValue()
 
@@ -34,12 +34,14 @@ class PickleStream(Stream):
     def _setUnpickler(self):
         self._unpickler = pickle.Unpickler(self.stream)
 
-    def read(self, size = None):
+    def read(self, size = -1):
         'size is ignored'
-        if not self._buffer:
-            self.update()
-        r = self._buffer[:]
-        self._buffer = []
+        if size == -1:
+            r = self._buffer[:]
+            self._buffer = []
+        else:
+            r = self._buffer[:size]
+            self._buffer = self._buffer[size:]
         return r
 
     def update(self):

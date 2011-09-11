@@ -45,9 +45,13 @@ class test_GlobalObject(unittest.TestCase):
         s.flush()
         self.assertTrue(s.printOnFail())
         try:
+            s.update()
             self.assertEqual(o.__class__, s.read()[0]) #1
+            s.update()
             self.assertEqual(o.__reduce__()[0], s.read()[0]) #2
+            s.update()
             self.assertEqual(o.__reduce__()[1], s.read()[0]) #3
+            s.update()
             o2 = s.read()[0] #4
         except :
             ty, er, tb = sys.exc_info()
@@ -76,7 +80,7 @@ def replace_import():
     except: __builtins__.__import__ = __import__
     
 def test_module():
-    unittest.main(exit = False)
+    unittest.main(exit = False, verbosity = 2)
 
 if __name__ == '__main__':
     test_module()

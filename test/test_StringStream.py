@@ -48,6 +48,37 @@ class test_StringStream(unittest.TestCase):
 
     def _test_empty(self, s):
         self.assertEqual('', s.read(6))
+
+    def test_complex_1(self):
+        self._test_empty(self.s1())
+
+    def s1(self):
+        s = self.newStream()
+        s.write('lalilu')
+        self.assertEquals('la', s.read(2))
+        s.update()
+        s.write('hell')
+        s.flush()
+        s.update()
+        self.assertEquals('liluhell', s.read())
+        s.flush()
+        return s
+
+    def test_complex_2(self):
+        s = self.s1()
+        s.update()
+        s.write('lalilu')
+        self.assertEquals('la', s.read(2))
+        s.write('hello!')
+        s.update()
+        s.flush()
+        self.assertEquals('lilu', s.read(4))
+        s.update()
+        self.assertEquals('hell', s.read(4))
+        self.assertEquals('o!', s.read())
+        s.update()
+        self._test_empty(s)
+        
         
 
 

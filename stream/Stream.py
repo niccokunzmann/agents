@@ -21,4 +21,3 @@ class Stream(object):
     def _overtake_attribute(self, attr):
         if hasattr(self.stream, attr):
             setattr(self, attr, getattr(self.stream, attr))
-

@@ -32,6 +32,7 @@ class test_dedicatedTest(unittest.TestCase):
             ty, er, tb = sys.exc_info()
             raise ty, er, tb
         if debug:print 5
+        s.update()
         o2 = s.read()[0]
         if debug:print 6
         try:
