@@ -54,7 +54,7 @@ return succeeded'''
         if not self.__printed:
             sys.stdout.write('%s object deleted without print' % self)
 
-def launchDedicatedTest(filename):
+def launchDedicatedTest(filename, *tests):
     if not os.path.exists(filename):
         filename = os.path.join(os.path.split(sys.argv[0])[0], filename)
     s = socket.socket()
@@ -65,7 +65,9 @@ def launchDedicatedTest(filename):
 ##    print 'connection to port', port
     exe = sys.executable
     #exe = 'C:\\bin\\winpdb.bat'
-    pipe = subprocess.Popen([exe, filename, str(port)], stdin = PIPE,
+    args = [exe, filename, str(port)]
+    args.extend(list(tests))
+    pipe = subprocess.Popen(args, stdin = PIPE,
                             stdout = PIPE, stderr = PIPE,
                             )
     sock, addr = doTimeout(s.accept, socket.error, default = (None, None))

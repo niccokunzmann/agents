@@ -8,7 +8,6 @@ if __name__ == '__main__':
         path = '.'
     else:
         path = os.path.split(__file__)[0]
-    suite = unittest.TestSuite()
     caseset = dict()
     def addSuite(suite):
         for case in suite:
@@ -44,6 +43,5 @@ if __name__ == '__main__':
             cases = unittest.defaultTestLoader.loadTestsFromModule(mod)
             addSuite(cases)
     l = caseset.values()
-    l.append(suite)
     suite = unittest.TestSuite(l)
     unittest.TextTestRunner(verbosity=1).run(suite)
