@@ -38,5 +38,5 @@ if __name__ == '__main__':
             l.append(1)
     thread.start_new(test, ())
     #test()
-    doTimeout(lambda :1/len(l), ZeroDivisionError)
+    doTimeout(lambda :1/len(l), ZeroDivisionError, timeout = 10)
     

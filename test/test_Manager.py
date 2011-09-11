@@ -1,6 +1,6 @@
 from test import *
 
-from objects.Manager import Manager
+from stream.Manager import Manager
 
 from test_GlobalObject import test_GlobalObject
 
@@ -13,9 +13,11 @@ class test_Manager(test_GlobalObject):
         m = self.newObject('test_dedicated_echo')
         m2 = dedicated_echo(m)
         self.assertIsNot(None, m2, 'echo failed')
+        self.assertIs(m, m2)
         
     def test_dedicated(self):
-        pass
+        m = self.newObject('test_dedicated')
+        ps = dedicated_echo
 
 
 

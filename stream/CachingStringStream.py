@@ -57,7 +57,11 @@ class CachingStringStream(Stream):
             return s[:size]
         self._read_len -= len(s)
         return s
+
     
+import StreamFactory
+StreamFactory.registerStream(BrokenStream, \
+        toTuple = lambda stream: stream.stream, stream._bufsize)
     
 
 

@@ -1,4 +1,13 @@
 
+class StreamError(Exception):
+    pass
+
+class BrokenStreamError(EOFError, StreamError):
+    '''this Error shall be raised if the Stream has stopped working'''
+    pass
+
+class StreamClosedError(BrokenStreamError):
+    pass
 
 class Stream(object):
 
