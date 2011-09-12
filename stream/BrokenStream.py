@@ -7,9 +7,12 @@ all methods throw an error except close
 
 '''
 
-    def __init__(self, stream = None):
+    def __init__(self, stream = None, closed = False):
         Stream.__init__(self, stream)
         self.error = BrokenStreamError('the stream is broken')
+        self._closed = False
+        if closed:
+            self.close()
 
     def read(self, count = None):
         '''throw BrokenStreamError or StreamClosedError if closed'''
@@ -38,8 +41,10 @@ all methods throw an error except close
     def close(self):
         '''close the stream'''
         self.error = StreamClosedError('the stream is closed')
+        self._closed = True
 
     
 import StreamFactory
-StreamFactory.registerStream(BrokenStream, toTuple = StreamFactory.noArguments)
+StreamFactory.registerStream(BrokenStream, None,
+                             lambda b: (b.stream, b._closed))
 

@@ -39,4 +39,9 @@ class BlockingStringStream(StringStream):
     def close(self):
         self.__closed = True
 
+import StreamFactory
+
+StreamFactory.registerStream(BlockingStringStream, None, \
+                             lambda s: (s.string, s.index))
+
 __all__= ['BlockingStringStream']

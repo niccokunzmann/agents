@@ -9,10 +9,25 @@ class DebugStream(Stream):
     def __init__(self, stream, name = '', to = sys.stdout):
         Stream.__init__(self, stream)
         self.name = ''
-        self._overtake_attribute('fileno')
-        self._overtake_attribute('flush')
-        self._overtake_attribute('update')
         self.to = to
+
+    def flush(self):
+        print >> self.to, 'flush %s:' % self.name,
+        r = self.stream.flush()
+        print(r)
+        return r
+
+    def update(self):
+        print >> self.to, 'update %s' % self.name,
+        r = self.stream.update()
+        print(r)
+        return r
+
+    def fileno(self):
+        print >> self.to, 'fileno %s' % self.name,
+        r = self.stream.fileno()
+        print(r)
+        return r
 
     def read(self, arg = _l):
         print >> self.to, 'read %s:' % self.name,

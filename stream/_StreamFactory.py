@@ -31,9 +31,7 @@ if the stream class not known a
 a the given string stream
 '''
         FactoryStream.__init__(self, stream)
-        self._overtake_attribute('flush')
-        self._overtake_attribute('update')
-        self._streamClasses = []
+        self._streamClasses = [] # cls, name
 
     def getFactoryStream(self):
         '''return a Reader for other data than streams'''
@@ -49,7 +47,8 @@ of the module then use registerNewStream(...)
 '''
         if streamCls in streamRegister:
             return self.registerNewStream(*streamRegister[streamCls])
-        raise StreamNotRegistered('the stream class could not be found')
+        raise StreamNotRegistered('the stream class %r could not be found' % \
+                                  streamCls)
     
     def registerNewStream(self, streamCls, name, toTuple, constructor):
         '''this works like the module function registerStream()
@@ -71,7 +70,7 @@ but only for this StreamFactory
                 self.newStreamConstructor(streamCls, name, constructor))
         setattr(self, 'write_' + name, \
                 self.newStreamSaver(streamCls, name, toTuple))
-        self._streamClasses.append(streamCls)
+        self._streamClasses.append((streamCls, name))
 
 
     @staticmethod
@@ -80,7 +79,7 @@ but only for this StreamFactory
 that creates a stream reading information from the streamFactory
 constructor(serializer)'''
         def constructor(serializer):
-            t = serializer.read_tuple()
+            t = serializer.read()
             return const(*t)
         constructor.__name__ = 'contructor_' + name.replace('.', '_')
         return constructor
@@ -94,7 +93,7 @@ the saver writes the object to the stream'''
             if type(t) is not tuple:
                 t = (t,)
             serializer.stream.write(name + '\n')
-            serializer.write_tuple(t)
+            serializer.write(t)
         saver.__name__ = 'saver_' + name.replace('.', '_')
         return saver
 
@@ -123,12 +122,14 @@ class FactoryReader(Stream):
     '''This class is a Helper for the StreamFactory to read and write other
 datatypes
 supported:
-    int, str, long, tuple of supported
+    int, str, long, None, tuple of supported
 
 '''
     def __init__(self, stream, factory):
         Stream.__init__(self, stream)
         self.factory = factory
+        self._overtake_attribute('flush')
+        self._overtake_attribute('update')
 
     def read(self, count = None):
         '''read a tuple, string or stream'''
@@ -142,9 +143,24 @@ supported:
         'read tuple'
         length = int(self.stream.readline())
         return tuple([self.read() for i in xrange(length)])
-
     read_tuple = read_t
 
+    def read_0(self):
+        return ()
+    def read_1(self):
+        return (self.read(),)
+    def read_2(self):
+        return (self.read(),self.read())
+    def read_3(self):
+        return (self.read(),self.read(),self.read())
+    def read_4(self):
+        return (self.read(),self.read(),self.read(),self.read())
+
+    def read_T(self):
+        return True
+    def read_F(self):
+        return False
+    
     def read_s(self):
         'read string'
         return stringtuple.readString(self.stream)
@@ -154,6 +170,11 @@ supported:
         'read integer'
         return int(self.stream.readline())
     read_int = read_long = read_i
+
+    def read_N(self):
+        'read None from the stream'
+        return None
+    read_None = readNoneType = read_N
 
     def read_a(self):
         'read all - let the factory do the work'
@@ -172,14 +193,25 @@ supported:
         'write an integer or long'
         self.stream.write('i')
         self.stream.write(str(obj) + '\n')
-
     write_long = write_int
+
+    def write_NoneType(self, obj):
+        'write None'
+        self.stream.write('N')
+    write_None = write_NoneType
 
     def write_tuple(self, t):
         'write a tuple'
-        self.stream.write(str(len(t)) + '\n')
+        if len(t) <= 4:
+            self.stream.write(str(len(t)))
+        else:
+            self.stream.write('t' + str(len(t)) + '\n')
         for e in t:
             self.write(e)
+
+    def write_bool(self, b):
+        'write bool'
+        self.stream.write('FT'[b])
 
     def writeAll(self, obj):
         'write all other - let the factory do the work'
@@ -209,20 +241,19 @@ and can be passed to StreamFactory.registerStream
     streamRegister[streamCls.getStreamClassName()] = t
     
 
-def _constructFactory(cls, stream, streams):
-    fact = cls(stream)
-    name = factory.__name__
+def constructor(stream, streams):
+    factory = StreamFactory(stream)
     for stream in streams:
-        if stream == name:
-            fact.registerStream(cls)
-        else:
-            fact.registerStream(stream)
-    return fact
+        factory.registerStream(stream)
+    return factory
 
-def toTuple(fact):
-    # todo
-    return []
+def toTuple(factory):
+    l = []
+    for cls, name in factory._streamClasses:
+        l.append(name)
+    return factory.stream, tuple(l)
 
+registerStream(StreamFactory, None, toTuple, constructor)
 
 
 

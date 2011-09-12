@@ -1,6 +1,6 @@
 
 from Stream import Stream, BrokenStreamError
-from distobj.object.GlobalObject import *
+from distobj.objects.GlobalObject import *
 
 from BrokenStream import BrokenStream
 

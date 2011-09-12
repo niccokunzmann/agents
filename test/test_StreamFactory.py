@@ -3,6 +3,7 @@
 from test import *
 
 from stream.StringStream import StringStream
+from stream.CachingStringStream import CachingStringStream
 
 
 from stream.StreamFactory import *
@@ -19,7 +20,7 @@ class test_StreamFactory(unittest.TestCase):
         self.fac = self.newFac()
 
     def newFac(self):
-        return StreamFactory(StringStream())
+        return StreamFactory(CachingStringStream(StringStream()))
 
     def test_create(self):
         fac = self.newFac()
@@ -65,8 +66,8 @@ class test_StreamFactory(unittest.TestCase):
         self.fac.update()
         s2 = self.fac.read()
         self.assertIsInstance(s, CachingStringStream.CachingStringStream)
-        self.assertIsInstance(s, BrokenStream.BrokenStream)
-        self.assertIsInstance(s, StringStream)
+        self.assertIsInstance(s.stream, BrokenStream.BrokenStream)
+        self.assertIsInstance(s.stream.stream, StringStream)
 
     def test_do_readWrite(self):
         bs = BrokenStream.BrokenStream()
@@ -96,6 +97,72 @@ class test_StreamFactory(unittest.TestCase):
         self.assertIn(MyStream.__name__, reg)
         self.assertIn(MyStream.__module__ + '.' + MyStream.__name__, reg)
 
+    def test_ser(self):
+        test_factory(self, self.fac, StringStream, CachingStringStream)
+
+
+class test_FactoryReader(unittest.TestCase):
+
+    def setUp(self):
+        self.r = FactoryReader(StringStream(), None)
+        self.read = self.r.read
+        self.write = self.r.write
+
+    def rw_eq(self, obj):
+        self.write(obj)
+        self.r.flush()
+        self.r.update()
+        obj2 = self.read()
+        self.assertEqual(obj, obj2)
+
+    def test_1(self):
+        self.rw_eq(1)
+
+    def test__1231(self):
+        self.rw_eq(-1231)
+
+    def test_True(self):
+        self.rw_eq(False)
+
+    def test_False(self):
+        self.rw_eq(True)
+
+    def test_None(self):
+        self.rw_eq(None)
+
+    def test_t0(self):
+        self.rw_eq(())
+
+    def test_t1(self):
+        self.rw_eq(((1,),))
+        self.rw_eq(((-1,),))
+        self.rw_eq((True,))
+        self.rw_eq((False,))
+
+    def test_t2(self):
+        self.rw_eq((None, 5000000000))
+
+    def test_t3(self):
+        self.rw_eq((1,2,3))
+
+    def test_t4(self):
+        self.rw_eq(('agshdfj', 213, 44, None))
+
+    def test_t5(self):
+        self.rw_eq(('a', 3, (2,3,4,5,6), (1,2,3,4,5,6,7,8,None,0), 9))
+
+    def test_all(self):
+        self.test_t0()
+        self.test_t1()
+        self.test_t2()
+        self.test_t3()
+        self.test_t4()
+        self.test_t5()
+        self.test_None()
+        self.test_True()
+        self.test_False()
+        self.test_1()
+        self.test__1231()
 
 def test_module():
     unittest.main(exit = False, verbosity = 1)

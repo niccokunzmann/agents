@@ -26,6 +26,9 @@ class test_BrokenStream(unittest.TestCase):
     def test_update(self):
         self.assertRaises(self.error, self.newObject().update)
 
+    def test_ser(self):
+        test_factory(self, self.newObject())
+
 
 class test_BrokenStream_closed(test_BrokenStream):
 

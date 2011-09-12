@@ -13,6 +13,7 @@ class FactoryStream(Stream):
         assert hasattr(stream, 'readline'), 'readline required, '\
                                             'eventually use FileStream'
         Stream.__init__(self, stream)
+        self._overtake_attribute('flush')
 
     def getFactoryStream(self):
         return self.stream
@@ -26,12 +27,13 @@ count will be ignored'''
     def callReadMethod(self, name):
         '''call the given method by name'''
         method = self.findReadMethod(name)
-        try:
-            if method is not None:
-                return method(self.getFactoryStream())
-            raise MethodNotFound('method %r was not found' % name)
-        finally:
-            self.cleanupRead()
+        if method is not None:
+            return method(self.getFactoryStream())
+        raise MethodNotFound('method %r was not found' % name)
+            
+    def update(self):
+        self.cleanupRead()
+        self.stream.update()
 
     def findReadMethod(self, name):
         '''find the method by name starting with read_'''

@@ -31,7 +31,14 @@ def do_readWrite(stream, *cls):
 cls are the additional stream classes required'''
     import stream.StreamFactory as StreamFactory
     import stream.StringStream as StringStream
-    fac = StreamFactory.StreamFactory(StringStream.StringStream())
+    import stream.CachingStringStream as CachingStringStream
+    import stream.DebugStream as DebugStream
+    import stream.FileStream as FileStream
+    fac =   StreamFactory.StreamFactory(\
+             FileStream.FileStream(
+              CachingStringStream.CachingStringStream(\
+               StringStream.StringStream()
+            )))
     for cls in cls:
         fac.registerStream(cls)
     fac.registerStream(type(stream))

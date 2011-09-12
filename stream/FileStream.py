@@ -2,6 +2,13 @@ from Stream import *
 
 
 class FileStream(Stream):
+    '''The FileStream takes as many attributes as possible
+from the uderlying stream
+if not defined it adds functionality as readline, readlines,
+flush, close, update
+
+so the underlying stream only has to define read and write
+'''
 
     def __init__(self, stream):
         Stream.__init__(self, stream)
@@ -14,8 +21,10 @@ class FileStream(Stream):
         self._overtake_attribute('readline')
         self._overtake_attribute('readlines')
         self._overtake_attribute('update')
+        self._overtake_attribute('close')
 
     def readline(self):
+        'read a line from the stream until\\n'
         c = ''
         s = ''
         while c != '\n':
@@ -23,7 +32,6 @@ class FileStream(Stream):
             if c == '':
                 time.sleep(0.001)
             s+= c
-        print 'reading line:', repr(s)
         return s
 
     def readlines(self, sizehint = 0): # from StringIO
@@ -46,9 +54,18 @@ class FileStream(Stream):
         return lines # also in StringStream    
 
     def writelines(self, lines):
+        'write the list of lines to the stream not adding any characters'
         for line in lines:
             self.write(line)
 
     def update(self):
+        'do nothing'
         pass
         
+    def flush(self):
+        'do nothing'
+        pass
+
+    def close(self):
+        'do nothing'
+        pass
