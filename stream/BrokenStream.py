@@ -1,7 +1,5 @@
 from Stream import *
 
-
-
 class BrokenStream(Stream):
     '''This Stream always simulates to be broken
 if you close it the error will be changed
@@ -13,7 +11,7 @@ all methods throw an error except close
         Stream.__init__(self, stream)
         self.error = BrokenStreamError('the stream is broken')
 
-    def read(self, count = _l):
+    def read(self, count = None):
         '''throw BrokenStreamError or StreamClosedError if closed'''
         raise self.error
         

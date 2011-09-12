@@ -12,7 +12,7 @@ class FactoryStream(Stream):
     def __init__(self, stream):
         assert hasattr(stream, 'readline'), 'readline required, '\
                                             'eventually use FileStream'
-        Stream.__init__(self)
+        Stream.__init__(self, stream)
 
     def getFactoryStream(self):
         return self.stream
@@ -41,16 +41,18 @@ count will be ignored'''
         '''throw away all remaining string'''
         self.stream.read()
 
-    def write(self, stream):
+    def write(self, obj):
         '''write a stream to this stream'''
-        method = self.findMethod(stream)
-        method(self.getFactoryStream(), stream)
+        method = self.findWriteMethod(obj)
+        method(self.getFactoryStream(), obj)
 
-    def findMethod(self, stream):
-        return getattr(self, 'write_' + self.getStreamName(stream), None)
+    def findWriteMethod(self, obj):
+        return getattr(self, self.getWriteMethodName(obj), \
+                             self.writeMethodNotFound)
 
-    def getStreamName(self, stream):
-        return type(stream).__name__
-        
-
+    def getWriteMethodName(self, obj):
+        return 'write_' + type(obj).__name__
+    
+    def writeMethodNotFound(self, obj):
+        raise MethodNotFound('no method found to serialize %r' % obj)
         

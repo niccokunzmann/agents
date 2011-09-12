@@ -60,8 +60,8 @@ class CachingStringStream(Stream):
 
     
 import StreamFactory
-StreamFactory.registerStream(BrokenStream, \
-        toTuple = lambda stream: stream.stream, stream._bufsize)
+StreamFactory.registerStream(CachingStringStream, None, \
+        lambda stream: (stream.stream, stream._bufsize))
     
 
 

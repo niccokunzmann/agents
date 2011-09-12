@@ -78,7 +78,20 @@ class test_StringStream(unittest.TestCase):
         self.assertEquals('o!', s.read())
         s.update()
         self._test_empty(s)
-        
+
+    def test_ser(self):
+        self.ser_eq(self.newStream())
+
+    def test_ser_spe(self):
+        s = self.newStream()
+        s.write('lailul354562738344')
+        s.read(5)
+        self.ser_eq(s)
+
+    def ser_eq(self, s1):
+        s2 = test_factory(self, s1)
+        self.assertEqual(s1.index, s2.index)
+        self.assertEqual(s1.string, s2.string)
         
 
 

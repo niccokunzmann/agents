@@ -58,7 +58,11 @@ class StringStream(Stream):
         return lines # also in FileStream
 
     def update(self):
-        pass
-            
+        pass            
+
+import StreamFactory
+
+StreamFactory.registerStream(StringStream, None, \
+                             lambda s: (s.string, s.index))
 
 __all__ = ['StringStream']
