@@ -7,6 +7,8 @@ import time
 import StringStream
 import FileStream
 
+import socket
+
 class StreamWrap(Stream):
     def __init__(self, *args, **kw):
         d = self.getAttributes(*args, **kw)
@@ -31,6 +33,7 @@ class PipeStream(StreamWrap):
         read = pipe.stdout.read
         write = pipe.stdin.write
         flush = pipe.stdin.flush
+        stream = None
         return locals()
 
 
@@ -51,6 +54,7 @@ class StdIOStream(StreamWrap):
                         time.sleep(0.001)
                     s+= c
                 return s
+        stream = sys.stdout
         return locals()
     
 
@@ -59,4 +63,15 @@ def SocketStream(sock):
     f.socket = sock
     return f        
         
+class SocketStream(StreamWrap):
 
+    def getAttributes(self, stream):
+        try:
+            rdbufsize = stream.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        except socket.error:
+            rdbufsize = 8096
+        def read(size = rdbufsize):
+            return stream.recv(size)
+        write = stream.sendall
+        return locals()
+            

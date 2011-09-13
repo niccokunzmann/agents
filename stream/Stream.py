@@ -18,6 +18,7 @@ class Stream(object):
         raise NotImplementedError('read is not implemented')
         
     def update(self):
+        '''update the stream for reading'''
         raise NotImplementedError('update is not implemented')
        
 
@@ -25,6 +26,7 @@ class Stream(object):
         raise NotImplementedError('write is not implemented')
 
     def flush(self):
+        '''flush the stream after writing'''
         raise NotImplementedError('flush is not implemented')
 
     def _overtake_attribute(self, attr):
@@ -34,3 +36,8 @@ class Stream(object):
     @classmethod
     def getStreamClassName(cls):
         return cls.__module__ + '__' + cls.__name__
+
+    def fileno(self):
+        '''return the fileno() of the underlying stream'''
+        return self.stream.fileno()
+    
