@@ -61,6 +61,15 @@ class test_dedicatedTest(unittest.TestCase):
         o = s.read()[0]
         self.assertEqual(1, o, 'objects equal')
 
+    def test_start_unknown_test(self):
+        self.assertRaises(DedicatedTestError, launchDedicatedTest, \
+                          'this_is_some_test_not_existing.py')
+
+    def test_start_dedicated_not_seperately(self):
+        self.assertRaises(NoDedicatedTest, beDedicatedTest)
+
+        
+
 def test_module():
     unittest.main(exit = False)
 

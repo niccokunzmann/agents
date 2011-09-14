@@ -25,7 +25,11 @@ default.x
     def __getattr__(self, name):
         return hasattr(_get_attr(self, '__obj'), name)
 
-
+def _getDefault(cls, obj):
+    class DefaultSubClass(cls, _DefaultAttributes):
+        __init__ = _DefaultAttributes.__init__
+        __new__ = _DefaultAttributes.__new__
+    return DefaultSubClass(obj) 
 
 class GlobalObject(object):
     '''
@@ -73,7 +77,7 @@ on the other side of the stream'''
 
     
     def default(self):
-        return _DefaultAttributes(self)
+        return _getDefault(type(self), self)
     default = property(default, doc = '''handle default values
 globalobject.default.attribute = value
     set the default value for attribute

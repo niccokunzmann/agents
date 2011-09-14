@@ -19,6 +19,11 @@ import re
 
 tests_succeded_regex = re.compile('(?s).*\nOK[^\n]*$')
 
+class DedicatedTestError(Exception):
+    pass
+
+class NoDedicatedTest(DedicatedTestError):
+    pass
 
 class DedicatedTestStream(FileStream):
     ''' an stream for dedicated tests
@@ -59,7 +64,8 @@ return succeeded'''
 
     def __del__(self):
         if not self.__printed:
-            sys.stdout.write('%s object deleted without print' % self)
+            sys.stdout.write('%s object deleted without printOnFail() called' % \
+                             type(self).__name__)
 
 def launchDedicatedTest(filename, *tests):
     '''launch a dedicated test from a filename, launch all tests or if given these tests'''
@@ -80,7 +86,8 @@ def launchDedicatedTest(filename, *tests):
                             )
     sock, addr = doTimeout(s.accept, socket.error, default = (None, None))
     if sock is None:
-        raise socket.error('connection refused')
+        raise DedicatedTestError('test does not react')
+    sock.setblocking(1)
 ##    print 'sock:', sock, sock.getpeername(), sock.getsockname()
     socketstream = (SocketStream(sock))
 ##    print 'socketstream:', socketstream
@@ -90,7 +97,10 @@ def launchDedicatedTest(filename, *tests):
 def beDedicatedTest():
     ''' this method is used in tests started by launchDedicatedTest
 start this method before unittest.main() to get a pickle stream'''
-    port = int(sys.argv.pop(1))
+    try:
+        port = int(sys.argv.pop(1))
+    except (ValueError, IndexError):
+        raise NoDedicatedTest('this test is started seperately')
     sock = socket.socket()
     sock.connect(('localhost', port))
 ##    print 'sock:', sock, sock.getpeername(), sock.getsockname()
