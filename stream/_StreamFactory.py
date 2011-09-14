@@ -79,7 +79,7 @@ but only for this StreamFactory
 that creates a stream reading information from the streamFactory
 constructor(serializer)'''
         def constructor(serializer):
-            t = serializer.read()
+            t = serializer.read(1)
             return const(*t)
         constructor.__name__ = 'contructor_' + name.replace('.', '_')
         return constructor
@@ -135,6 +135,7 @@ supported:
         '''read a tuple, string or stream'''
         t = self.stream.read(1)
         method = getattr(self, 'read_' + t, None)
+##        print 'FactoryStream.read: %r' % t, method
         if method is not None:
             return method()
         raise MethodNotFound(repr(t))
@@ -142,19 +143,19 @@ supported:
     def read_t(self):
         'read tuple'
         length = int(self.stream.readline())
-        return tuple([self.read() for i in xrange(length)])
+        return tuple([self.read(1) for i in xrange(length)])
     read_tuple = read_t
 
     def read_0(self):
         return ()
     def read_1(self):
-        return (self.read(),)
+        return (self.read(1),)
     def read_2(self):
-        return (self.read(),self.read())
+        return (self.read(1),self.read(1))
     def read_3(self):
-        return (self.read(),self.read(),self.read())
+        return (self.read(1),self.read(1),self.read(1))
     def read_4(self):
-        return (self.read(),self.read(),self.read(),self.read())
+        return (self.read(1),self.read(1),self.read(1),self.read(1))
 
     def read_T(self):
         return True
@@ -178,10 +179,11 @@ supported:
 
     def read_a(self):
         'read all - let the factory do the work'
-        return self.factory.read()
+        return self.factory.read(1)[0]
 
     def write(self, obj):
         'write an object'
+##        print 'FactoryStream.write: %r' % type(obj).__name__
         return getattr(self, 'write_' + type(obj).__name__, self.writeAll)(obj)
 
     def write_str(self, obj):

@@ -62,7 +62,3 @@ class DebugStream(Stream):
             obj = self.stream.readlines()
         print >> self.to, 'readlines: %s' % self.name, repr(obj)
         return obj
-
-    def update(self):
-        pass
-

@@ -55,15 +55,15 @@ class test_CachingStringStream(unittest.TestCase):
 
     def test_ser(self):
         self.ser_eq(self.newStream())
-
-    def test_ser_spe(self):
-        s = self.newStream()
-        s.write('lailul354562738344')
-        s.flush()
-        s.update()
-        s.read(5)
-        self.ser_eq(s)
-
+##
+##    def test_ser_spe(self):
+##        s = self.newStream()
+##        s.write('lailul354562738344')
+##        s.flush()
+##        s.update()
+##        s.read(5)
+##        self.ser_eq(s)
+##
     def ser_eq(self, s1):
         s2 = test_factory(self, s1, StringStream)
         self.assertEquals(s2._bufsize, s1._bufsize)
@@ -87,10 +87,10 @@ class test_CachingStringStream_tinyBuffer(test_CachingStringStream):
     def test_bufsize(self):
         self.newStream()._bufsize == 1
 
-    test_write = succeed#unittest.expectedFailure(\
-        #test_CachingStringStream.test_write)
-    test_read_update = succeed#unittest.expectedFailure(\
-        #test_CachingStringStream.test_read_update)
+    test_write = unittest.expectedFailure(\
+        test_CachingStringStream.test_write)
+    test_read_update = unittest.expectedFailure(\
+        test_CachingStringStream.test_read_update)
     
 class test_CachingStringStream_smallerBuffer(test_CachingStringStream):
 
@@ -99,8 +99,8 @@ class test_CachingStringStream_smallerBuffer(test_CachingStringStream):
     def test_bufsize(self):
         self.newStream()._bufsize == 4
     
-    test_write = succeed#unittest.expectedFailure(\
-        #test_CachingStringStream.test_write)
+    test_write = unittest.expectedFailure(\
+        test_CachingStringStream.test_write)
     
 class test_CachingStringStream_smallBuffer(test_CachingStringStream):
 

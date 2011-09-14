@@ -18,11 +18,16 @@ class FactoryStream(Stream):
     def getFactoryStream(self):
         return self.stream
 
-    def read(self, count = None):
-        '''read a stream
-count will be ignored'''
-        methodname = self.stream.readline().strip()
-        return self.callReadMethod(methodname)
+    def read(self, count = -1):
+        '''read a stream'''
+        l = []
+        while not (len(l) >= count > -1):
+            methodname = self.stream.readline().strip()
+            if not methodname:
+                break
+            stream = self.callReadMethod(methodname)
+            l.append(stream)
+        return l
 
     def callReadMethod(self, name):
         '''call the given method by name'''

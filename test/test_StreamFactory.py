@@ -10,6 +10,7 @@ from stream.StreamFactory import *
 
 import stream.BrokenStream as BrokenStream
 
+debug = False
 
 class MyStream(BrokenStream.BrokenStream):
     pass
@@ -51,11 +52,15 @@ class test_StreamFactory(unittest.TestCase):
         self.test_write_BrokenStream()
         self.fac.update()
         bs = self.fac.read(1)
-        self.assertIsInstance(bs, BrokenStream.BrokenStream)
+        self.assertNotEqual([], bs)
+        self.assertIsInstance(bs[0], BrokenStream.BrokenStream)
 
     def test_stream_cascade(self):
         self.fac.registerStream(BrokenStream.BrokenStream)
         self.fac.registerStream(StringStream)
+        if debug:
+            print '-----------------------cascade'
+            self.fac.stream = DebugStream(self.fac.stream)
         import stream.CachingStringStream as CachingStringStream
         self.fac.registerStream(CachingStringStream.CachingStringStream)
         s = StringStream()
@@ -65,9 +70,16 @@ class test_StreamFactory(unittest.TestCase):
         self.fac.flush()
         self.fac.update()
         s2 = self.fac.read()
+        self.assertNotEqual([], s2, 'no stream read')
+        s2 = s2[0]
+        if debug:
+            print '-----------------------cascade end:', s2
         self.assertIsInstance(s, CachingStringStream.CachingStringStream)
         self.assertIsInstance(s.stream, BrokenStream.BrokenStream)
         self.assertIsInstance(s.stream.stream, StringStream)
+        self.assertIsInstance(s2, CachingStringStream.CachingStringStream)
+        self.assertIsInstance(s2.stream, BrokenStream.BrokenStream)
+        self.assertIsInstance(s2.stream.stream, StringStream)
 
     def test_do_readWrite(self):
         bs = BrokenStream.BrokenStream()

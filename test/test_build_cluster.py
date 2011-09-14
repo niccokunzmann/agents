@@ -11,7 +11,7 @@ debug = True
 
 class test_build_cluster(unittest.TestCase):
 
-    @unittest.skip('todo')
+##    @unittest.skip('todo')
     def test_dedicated_launch(self):
         port = IPPort()
         ps = launchDedicatedTest('test_built_cluster_dedicated.py', \
@@ -99,7 +99,24 @@ class test_build_cluster(unittest.TestCase):
         self.assertIs(s, rl[0])
         s.setblocking(0)
         s3, addr = s.accept()
+
+    def test_reuse_addr_udp(self):
+        sock1 = self.new_udp_sock()
+        sock2 = self.new_udp_sock()
+
+    @unittest.skipUnless(socket.has_ipv6, 'no ipv6 -> no test')
+    def test_reuse_addr_udp_ipv6(self):
+        sock1 = self.new_udp_sock()
+        sock2 = self.new_udp_sock()
+
         
+    def new_udp_sock(self, family=socket.AF_INET, host=('localhost', 44055)):
+        sock = socket.socket(family, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(host)
+        return sock
+        
+
 
 
 if __name__ == '__main__':

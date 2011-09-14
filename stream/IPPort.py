@@ -26,7 +26,7 @@ class SocketAcceptStream(Stream):
 
     def update(self):
         a = select.select(self.sockets, [], [], 0)[0]
-        while a and not (len(self._buffer) > self.maxcon > -1):
+        while a and not (len(self._buffer) >= self.maxcon > -1):
             for sock in a:
                 new_s, addr = sock.accept()
                 self._buffer.append(new_s)
@@ -145,7 +145,7 @@ class BroadcastFactory(StreamFactory.StreamFactory):
         self.registerStream(IPConnectionFactory)
     
 
-class MultiStreamWriter(Stream):
+class MultiStream(Stream):
 
     def __init__(self, streams):
         Stream.__init__(self, streams)
@@ -157,6 +157,15 @@ class MultiStreamWriter(Stream):
     def flush(self):
         for stream in self.stream:
             stream.flush()
+
+    def read(self, count):
+        rd, wt, x = select.select(self.streams, [], [], 0)
+        if rd:
+            return rd[0].read(count)
+        return ''
+
+    def update(self):
+        pass
 
 class IPPort(Port):
 
@@ -171,55 +180,73 @@ class IPPort(Port):
         self.host = ''
         self._acceptStream = self._newAcceptStream()
         self._broadcastStream = self._newBroadcastStream()
-        self._udpStream = self._newUdpStream()
 
     def _newAcceptStream(self):
-        l = []
-        s4 = socket.socket(socket.AF_INET)
-        s4.bind((self.host, self.port))
-        s4.listen(1)
-        l.append(s4)
-        if socket.has_ipv6:
-            s6 = socket.socket(socket.AF_INET6)
-            s6.bind((self.host, self.port))
-            s6.listen(1)
-            l.append(s6)
+        s = self._newSocket(None, socket.SOCK_DGRAM)
+        s.bind((self.host, self.port))
+        s.listen(1)
+        l = [s]
         a = SocketAcceptStream(l, 10)
-        a = CachingStringStream(a)
-        a = BroadcastFactory(a)
+        a = self.newEndpointFactory(a)
         return a
 
     def _newBroadcastStream(self):
         l = []
-        l.append(socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
-        if socket.has_ipv6:
-            pass
-##            l.append(socket.socket(socket.AF_INET6, socket.SOCK_DGRAM))
-        for sock in l:
+        for addr in self.broadcastAddrs:
+            sock = self._newSocket(None, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            for addr in self.broadcastAddrs:
-                sock.connect((addr, self.port))
+            sock.connect((addr, self.port))
+        l.append(self._newUdpPort())
         m = MultiStreamWriter(l)
-        return self.newUdpFactory(m)
+        return self.newEndpointFactory(m)
 
-    def newUdpFactory(self, stream):
+    def _newUdpPort(self):
+        sock = self._newSocket(None, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind((self.host, self.port))
+        s = StreamWrap.SocketStream(sock)
+        return s
+    
+    def newEndpointFactory(self, stream):
         m = CachingStringStream(stream)
         m = BroadcastFactory(m)
         return m
 
-    def newUdpStream(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((self.host, self.port))
-        # todo
+    def _newSocket(self, family = None, type = None, proto = None):
+        choose = family is None
+        if choose:
+            if socket.has_ipv6:
+                family = socket.AF_INET6 # can handle also IPv4
+            else:
+                family = socket.AF_INET
+        if type is None:
+            type = socket.SOCK_STREAM
+        if proto is None:
+            args = (family, type)
+        else:
+            args = (family, type, proto)
+        errors = (socket.error,) * choose
+        try:
+            return socket.socket(*args)
+        except errors: # cannot create IPv6 socket
+            return self._newSocket(socket.AF_INET, type, proto)
         
-
-
     def read(self, count = -1):
-        return [IPConnection(sock) for sock in self._acceptStream.read(count)]
+        r = []
+        l = self._acceptStream.read(count)
+        if not (len(l) >= count > -1):
+            e = self._broadcastStream.read(1)
+            r.extend(e)
+        for sock in l:
+            s = StreamWrap.SocketStream(sock)
+            f = self.newEndpointFactory(s)
+            c = IpConnection(f)
+            r.append(c)	
+        return r
 
     def update(self):
         self._acceptStream.update()
+        self._broadcastStream.update()
 
     def write(self, obj):
         self._broadcastStream.write(obj)

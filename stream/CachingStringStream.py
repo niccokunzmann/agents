@@ -68,6 +68,7 @@ class CachingStringStream(Stream):
         'read a line from the string or all data'
         i = 0
         c = 0
+        i2 = -1
         while i < len(self._read_buf):
             i2 = self._read_buf[i].find('\n')
             if i2 != -1:

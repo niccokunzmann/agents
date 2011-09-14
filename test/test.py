@@ -45,7 +45,7 @@ cls are the additional stream classes required'''
     fac.write(stream)
     fac.flush()
     fac.update()
-    return fac.read()
+    return fac.read(1)[0]
 
 def test_factory(testCase, stream, *cls):
     s = do_readWrite(stream, *cls)
