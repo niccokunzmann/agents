@@ -1,6 +1,7 @@
 from Stream import Stream
 
 import pickle
+import StreamFactory
 
 class NoValue(object):
     ''' Singleton Object noValue
@@ -52,3 +53,8 @@ class PickleStream(Stream):
 
     def write(self, obj):
         return self._pickler.dump(obj)
+
+StreamFactory.registerStream(PickleStream, None, StreamFactory.streamArguments)
+
+
+

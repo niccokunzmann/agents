@@ -40,4 +40,7 @@ class Stream(object):
     def fileno(self):
         '''return the fileno() of the underlying stream'''
         return self.stream.fileno()
-    
+
+    def close(self):
+        '''close the stream'''
+        raise NotImplementedError('close  is not implemented')

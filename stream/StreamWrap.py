@@ -73,5 +73,25 @@ class SocketStream(StreamWrap):
         def read(size = rdbufsize):
             return stream.recv(size)
         write = stream.sendall
+        stream = sock = stream
+        close = stream.close
+##        def close():
+##            print 'closed!', stream
+##            stream.close()
         return locals()
-            
+
+
+class WrapReadFactory(Stream):
+
+    def __init__(self, stream, func, *args, **kw):
+        self.func = func
+        self.args = args
+        self.kw = kw
+        Stream.__init__(self, stream)
+
+    def read(self, *args):
+        v = self.stream.read(*args)
+        return func(v, *self.args, **self.kw)
+
+    def update(self):
+        return self.stream.update()

@@ -104,6 +104,10 @@ class CachingStringStream(Stream):
         for line in lines:
             self.write(line)
 
+    def close(self):
+        '''close the undelying stream'''
+        self.stream.close()
+
     
 import StreamFactory
 StreamFactory.registerStream(CachingStringStream, None, \

@@ -8,7 +8,7 @@ class DebugStream(Stream):
 
     def __init__(self, stream, name = '', to = sys.stdout):
         Stream.__init__(self, stream)
-        self.name = ''
+        self.name = name
         self.to = to
 
     def flush(self):
@@ -62,3 +62,7 @@ class DebugStream(Stream):
             obj = self.stream.readlines()
         print >> self.to, 'readlines: %s' % self.name, repr(obj)
         return obj
+
+    def close(self):
+        print >> self.to, 'close %s' % self.name
+        self.stream.close()

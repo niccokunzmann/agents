@@ -45,8 +45,8 @@ class FactoryStream(Stream):
         return getattr(self, 'read_' + name, None)
 
     def cleanupRead(self):
-        '''throw away all remaining string'''
-        self.stream.read()
+        '''clean the stream for reading'''
+        pass
 
     def write(self, obj):
         '''write a stream to this stream'''

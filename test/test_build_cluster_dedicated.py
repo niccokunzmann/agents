@@ -4,12 +4,13 @@ from test import *
 
 from stream.IPPort import IPPort
 
-class test_built_cluster_dedicated(unittest.TestCase):
+class test_build_cluster_dedicated(unittest.TestCase):
 
     def test_send_manager(self):
         ps.write(True)
-        port = IPPort()
+        port = IPPort(('localhost',), (6326,6328), (6327,))
         port.broadcast()
+        self.fail()
 
 
 
