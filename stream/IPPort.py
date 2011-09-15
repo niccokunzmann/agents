@@ -40,6 +40,7 @@ the factory constructor must take a stream of string
         self._broadcastReceiver = None
         self.broadcast_addresses = list(self.broadcast_adresses)
         self._connectionBuffer = []
+        self.acceptPort = 0
 
     def newFactory(self, *args):
         '''apply the arguments to the factory constructor and return the value'''
