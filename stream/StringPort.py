@@ -23,7 +23,7 @@ class StringPort(IPPort):
         self.write((host, self.acceptPort))
         self.flush()
 
-    def newConnectedConnection(self, sock):
+    def _newConnectedConnection(self, sock):
         buf = sock.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
         peername = sock.getpeername()
 ##        sock = DebugStream(SocketStream(sock), 'conn%i'%(id(sock)//4%25))
@@ -33,7 +33,7 @@ class StringPort(IPPort):
         sock = StringPortConnection(sock, (peername[HOST], 0))
         return sock
 
-    def newFactory(self, stream):
+    def _newFactory(self, stream):
         return StringConnectionFactory(stream)
 
 class EndlessConnectionFactory(EndlessStringStream):
