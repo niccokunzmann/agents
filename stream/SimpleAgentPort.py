@@ -1,116 +1,70 @@
 
+
+import socket
+
 from IPPort import IPPort
 
-from SimpleAgent import SimpleAgent
-
 from Stream import Stream
-from StreamWrap import SocketStream
+from StreamWrap import SocketStream, WrapReadFactory, forList
 from FileStream import FileStream
+from SimpleAgent import SimpleAgent
+from DebugStream import DebugStream
 from PickleStream import PickleStream
 from FactoryConnection import FactoryConnection
 from TCPConnectionEstablisher import TCPConnectionEstablisher
 
 import StreamFactory
-import socket
+
+
 
 PORT = 1
 ADDR = 0
 
-class SimpleAgentPort(IPPort):
-    '''This is a'''
+class TCPSocketStreamWrapper(WrapReadFactory):
+    '''wrap a SocketStream around each read'''
 
-    agentClasses = [SimpleAgent]
+    def __init__(self, stream):
+        WrapReadFactory.__init__(self, stream, forList(SocketStream))
 
-    def __init__(self, agent):
-        '''create a new SimpleAgentPort
-all received connections'''
-        IPPort.__init__(self)
-        self._agent = agent
+StreamFactory.registerStream(TCPSocketStreamWrapper)
 
-    def _getBroadcastConnection(self):
-        '''return the connection information to broadcast'''
-        addr = self.getConnectAddress()
-        if addr[PORT] is None:
-            raise ValueError('the portmust accept connections to broadcast')
-        factory = TCPConnectionEstablisher(addr)
-        factory = SimpleAgentStreamBuilder(factory)
-        conn = SimpleAgentPortConnection(self._agent, addr, factory)
-        return conn
-
-    def _newConnectedConnection(self, sock):
-        '''create a new socket connection wrap'''
-        return self._broadcastStream._wrapSocket(sock)
-
-    def _newFactory(self, stream):
-        '''return a new Factory to use'''
-        factory = SimpleAgentConnectionFactory(stream)
-        for agentClass in self.agentClasses:
-            factory.registerStream(agentClass)
-        return factory
-
-    def getfqdn(self):
-        '''return the fully qualified name for this host'''
-        return socket.getfqdn(self.host)
-
-    def getConnectAddress(self):
-        return (self.getfqdn(), self.acceptPort)
-        
-
-class SimpleAgentStreamBuilder(Stream):
-
+class OneReadStream(Stream):
+    '''this stream returns [stream] once and then []'''
     def __init__(self, stream):
         Stream.__init__(self, stream)
 
-    def read(self, *count):
-        socks = self.stream.read(*count)
-        return [self._wrapSocket(sock) for sock in socks]
+    def read(self, count = None):
+        stream = self.stream
+        if stream is None:
+            return []
+        self.stream = None
+        return [stream]
 
     def update(self):
-        self.stream.update()
+        pass
 
     def close(self):
-        self.stream.close()
+        pass
+
+
+class SimpleAgentStreamBuilder(WrapReadFactory):
+    '''this builds a PickleStream around each value read'''
+
+    def __init__(self, stream):
+        WrapReadFactory.__init__(self, stream, forList(self._wrapStream))
 
     @staticmethod
-    def _wrapSocket(sock):
-        sock = SocketStream(sock)
-        sock = FileStream(sock)
+    def _wrapStream(stream):
+        stream = FileStream(stream)
         # todo: add stream caching more and better -> faster read 
-        sock = PickleStream(sock)
-        return sock
+        stream = PickleStream(stream)
+        return stream
         
-StreamFactory.registerStream(SimpleAgentStreamBuilder, None, \
-                             StreamFactory.streamArguments)
-
-class SimpleAgentConnectionFactory(StreamFactory.StreamFactory):
-    SteamBuilder = SimpleAgentStreamBuilder
-    def __init__(self, stream, connections = ()):
-        StreamFactory.StreamFactory.__init__(self, stream)
-        self.connections = connections
-        self.register()
-
-    def register(self):
-        self.registerNewStream(TCPConnectionEstablisher, None, \
-                               self._connectionEstablisherToTuple, \
-                               self._connectionEstablisherFromTuple)
-        self.registerStream(self.SteamBuilder)
-        self.registerStream(SimpleAgentPortConnection)
-
-    @staticmethod
-    def _connectionEstablisherToTuple(e):
-        return (e.address_info,)
-    def _connectionEstablisherFromTuple(self, addr_info):
-        return TCPConnectionEstablisher(addr_info, self.connections)
-
-    @staticmethod
-    def _wrapSocket(sock):
-        return self.StreamBuilder._wrapSocket(sock)
-        
-
+StreamFactory.registerStream(SimpleAgentStreamBuilder)
 
 class SimpleAgentPortConnection(FactoryConnection):
-    def __init__(self, agent, address, factory):
-        FactoryConnection.__init__(self, factory)
+    def __init__(self, agent, address, builder):
+        FactoryConnection.__init__(self, builder)
         self.agent = agent
         self.address = address
 
@@ -124,19 +78,86 @@ class SimpleAgentPortConnection(FactoryConnection):
 StreamFactory.registerStream(SimpleAgentPortConnection, None, \
                              lambda c: c.toTuple())
 
-class OneStreamFactory(Stream):
-    def __init__(self, stream):
-        Stream.__init__(self, stream)
+class SimpleAgentPort(IPPort):
+    '''This is a SimpleAgentPort
 
-    def read(self, count = None):
-        stream = self.stream
-        if stream is None:
-            return []
-        self.stream = None
-        return stream
+Register
+    a list of classes to register for reading and writing
+    to read different Agent classes put them here
+    also Builder for different stream connections can be put to here
+    they will also be accepted by the factory
+    and may be broadcasted by other ports to specify connections
 
-    def update(self):
-        pass
+Builder
+    this builder builds new incoming connections
+    it will be broadcastet to other ports to enable connections to them
 
-    def close(self):
-        pass
+Factory
+    the factory writes builder classes to the broadcast
+    it also receives broadcasts and reads builders and connections
+
+Connection
+    the connection class that will be read by other ports
+    it represents the connection to this port
+    it is called by _newConnection like Connection(agent, address, builder)
+
+
+if you want to costomize the creation of the builder or a new connection or
+another factory overrride _newBuilder(stream), _newConnection(stream)
+and _newFactory and donnot forget to place the used streams in Register 
+when replacing _newFactory please add all streams in Register
+
+
+
+'''
+
+    Register = [SimpleAgent, TCPSocketStreamWrapper, TCPConnectionEstablisher, \
+                FileStream, SimpleAgentPortConnection]
+    Builder = SimpleAgentStreamBuilder
+    Factory = StreamFactory.StreamFactory
+    Connection = SimpleAgentPortConnection
+
+    def __init__(self, agent):
+        '''create a new SimpleAgentPort
+the agent is the agent all connections will be addressed to and
+should inherit from SimpleAgent'''
+        IPPort.__init__(self)
+        self._agent = agent
+
+    def _getBroadcastConnection(self):
+        '''return the connection information to broadcast'''
+        addr = self.getConnectAddress()
+        builder = TCPConnectionEstablisher(addr)
+        builder = TCPSocketStreamWrapper(builder)
+        builder = self._newBuilder(builder)
+        conn = self._newConnection(builder)
+        return conn
+
+    def _newConnection(self, builder):
+        '''return a new connection to this port around the stream'''
+        addr = self.getConnectAddress()
+        connection = SimpleAgentPortConnection(self._agent, addr, builder)
+        return connection
+        
+    def _newConnectedConnection(self, sock):
+        '''create a new socket connection wrap'''
+        stream = OneReadStream(sock)
+##        stream = DebugStream(stream, 'newCon')
+        stream = TCPSocketStreamWrapper(stream)
+        builder = self._newBuilder(stream)
+        connection = self._newConnection(builder)
+        return connection
+
+    def _newFactory(self, stream):
+        '''return a new Factory to use'''
+        factory = self.Factory(stream)
+        for cls in self.Register:
+            factory.registerStream(cls)
+        factory.registerStream(self.Builder)
+        return factory
+
+    def _newBuilder(self, stream):
+        '''return a new bulder'''
+        stream = FileStream(stream)
+        return self.Builder(stream)
+

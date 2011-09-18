@@ -20,7 +20,7 @@ class StringPort(IPPort):
         if not self.acceptPort:
             raise ValueError('openAccept before broadcasting')
         host = socket.getfqdn()
-        self.write((host, self.acceptPort))
+        self.write(self.getConnectAddress())
         self.flush()
 
     def _newConnectedConnection(self, sock):

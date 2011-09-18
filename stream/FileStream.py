@@ -1,11 +1,15 @@
+
+import time
+
 from Stream import *
 
+import StreamFactory
 
 class FileStream(Stream):
     '''The FileStream takes as many attributes as possible
 from the uderlying stream
 if not defined it adds functionality as readline, readlines,
-flush, close, update
+flush, close, update, writelines
 
 so the underlying stream only has to define read and write
 '''
@@ -69,3 +73,6 @@ so the underlying stream only has to define read and write
     def close(self):
         'do nothing'
         pass
+
+
+StreamFactory.registerStream(FileStream)

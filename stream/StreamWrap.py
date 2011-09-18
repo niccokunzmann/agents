@@ -86,17 +86,30 @@ class SocketStream(StreamWrap):
         return locals()
 
 
+def forList(func):
+    '''binds the first argument of map to this function'''
+    def forlist(l, *args, **kw):
+        return [func(v, *args, **kw) for v in l]
+    return forlist
+
 class WrapReadFactory(Stream):
+    '''
+WrapReadFactory(stream, function, *args, **kw)
+
+the function will be applied to each value read, args and kw
+use forList(function) to handle read lists
+
+'''
 
     def __init__(self, stream, func, *args, **kw):
+        Stream.__init__(self, stream)
         self.func = func
         self.args = args
         self.kw = kw
-        Stream.__init__(self, stream)
+        self._overtake_attribute('update')
+        self._overtake_attribute('close')
 
     def read(self, *args):
         v = self.stream.read(*args)
         return self.func(v, *self.args, **self.kw)
 
-    def update(self):
-        return self.stream.update()

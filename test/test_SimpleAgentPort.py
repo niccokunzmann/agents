@@ -52,7 +52,9 @@ class test_SimpleAgentPort(unittest.TestCase):
 
     def test_write(self):
         pass
-        
+
+    def test_addr(self):
+        host, port = self.p.getConnectAddress()
 
 
 if __name__ == '__main__':

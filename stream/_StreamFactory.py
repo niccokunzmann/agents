@@ -1,16 +1,10 @@
 
+from streamRegister import *
+
 from Stream import Stream
 from FactoryStream import FactoryStream, MethodNotFound
 
 import stringtuple
-
-def noArguments(stream, *args):
-    '''the stream will be initilized without any additional arguments'''
-    return ()
-
-def streamArguments(stream, *args):
-    '''the stream will be initilized with its stream as argument'''
-    return (stream.stream,)
 
 class StreamNotRegistered(MethodNotFound):
     '''if the stream is not registered to serialize or desereialize
@@ -181,6 +175,10 @@ supported:
         'read all - let the factory do the work'
         return self.factory.read(1)[0]
 
+    def read_u(self):
+        s = stringtuple.readString(self.stream)
+        return s.decode('UTF-8')
+
     def write(self, obj):
         'write an object'
 ##        print 'FactoryStream.write: %r' % type(obj).__name__
@@ -190,6 +188,10 @@ supported:
         'write a string'
         self.stream.write('s')
         stringtuple.writeString(self.stream, obj)
+
+    def write_unicode(self, obj):
+        self.stream.write('u')
+        stringtuple.writeString(self.stream, obj.encode('UTF-8'))
 
     def write_int(self, obj):
         'write an integer or long'
@@ -221,35 +223,16 @@ supported:
         self.factory.write(obj)
         
 
-streamRegister = {}
-
-def registerStream(streamCls, name = None, \
-                   toTuple = streamArguments, constructor = None):
-    '''registerStream(stream, [name, [toTuple, [constructor]]])
-toTuple(stream) generates a tuple of string, int, stream, tuple of stream
-constructor takes the stream class and the unfolded tuple as arguments
-the constructor defaults to the stream class
-toTuple can be noArguments or streamArguments or other
-valid names for the stream are:
-    <module name>.<class name>
-    <class name>
-    <class.getStreamClassName()>
-and can be passed to StreamFactory.registerStream
-'''
-    t = (streamCls, name, toTuple, constructor)
-    streamRegister[streamCls] = t
-    streamRegister[streamCls.__name__] = t
-    streamRegister[streamCls.__module__ + '.' + streamCls.__name__] = t
-    streamRegister[streamCls.getStreamClassName()] = t
-    
 
 def constructor(stream, streams):
+    '''constructor for StreamFactory'''
     factory = StreamFactory(stream)
     for stream in streams:
         factory.registerStream(stream)
     return factory
 
 def toTuple(factory):
+    '''for StreamFactory'''
     l = []
     for cls, name in factory._streamClasses:
         l.append(name)
