@@ -163,7 +163,7 @@ for ore information about port see open(port)'''
 
     def broadcast(self):
         '''broadcast connection information'''
-        self._getBroadcastConnection(self)
+        conn = self._getBroadcastConnection()
         self.write(conn)
         self.flush()
 

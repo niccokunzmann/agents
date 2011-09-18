@@ -143,6 +143,23 @@ class test_MultiStreamReader(unittest.TestCase):
             for j, s in enumerate(m.stream):
                 self.assertEqual((i if not j else 0), s.updates, '%i %i' % (i, j))
             m.update()
+
+    def test_add_stream(self):
+        m = self.m(0)
+        self.assertEqual([], m.stream)
+        s1 = MockStream()
+        s2 = MockStream()
+        s3 = MockStream()
+        m.addStream(s1)
+        self.assertEqual([s1], m.stream)
+        m.addStream(s1)
+        self.assertEqual([s1], m.stream)
+        m.addStream(s2)
+        m.addStream(s3)
+        self.assertEqual([s1, s2, s3], m.stream)
+        m.addStream(s2)
+        m.addStream(s3)
+        self.assertEqual([s1, s2, s3], m.stream)
         
     
 if __name__ == '__main__':
