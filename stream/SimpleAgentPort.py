@@ -1,6 +1,7 @@
 
 
 import socket
+import select
 
 from IPPort import IPPort
 
@@ -19,6 +20,33 @@ import StreamFactory
 
 PORT = 1
 ADDR = 0
+
+
+
+class UpdateStream(FileStream):
+    ''' this stream calls update until everything is read
+this requires the underlying string to have the fileno() function implemented
+if this is not the case update will be called only once
+pay attention that there will be read from the stream, too
+otherwise this may walk into an endless loop
+'''
+
+    def __init__(self, stream, maxUpdates = -1):
+        ignore = []
+        if hasattr(stream, 'fileno'):
+            ignore.append('update')
+            self._maxUpdates = maxUpdates
+        FileStream.__init__(self, stream, ignore = ignore)
+
+    def update(self):
+        '''update the stream as often as possible'''
+        s = select.select([self.stream], [], [], 0)[0]
+        m = self._maxUpdates
+        while s and (m == -1 or m >= 1):
+            self.stream.update()
+            s = select.select([self.stream], [], [], 0)[0]
+            m -= 1
+
 
 class TCPSocketStreamWrapper(WrapReadFactory):
     '''wrap a SocketStream around each read'''
@@ -56,8 +84,9 @@ class SimpleAgentStreamBuilder(WrapReadFactory):
     @staticmethod
     def _wrapStream(stream):
         stream = FileStream(stream)
-        # todo: add stream caching more and better -> faster read 
+        # todo: add stream caching more and better -> faster read
         stream = PickleStream(stream)
+        stream = UpdateStream(stream)
         return stream
         
 StreamFactory.registerStream(SimpleAgentStreamBuilder)

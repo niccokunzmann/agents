@@ -183,10 +183,10 @@ broadcast will raise a value error if canBroadcast returns False'''
         '''return the connection information to broadcast'''
         raise NotImplementedError('implement this to use broadcast')
     
-    def getfqdn(self):
+    def getHostName(self):
         '''return the fully qualified name for this host'''
         if time.time() > self.__lastfqdntime + FQDN_REFRESH_TIME:
-            self.__fqdn = f = socket.getfqdn(self.host)
+            self.__fqdn = f = socket.gethostname()
             return f
         else:
             return self.__fqdn
@@ -194,5 +194,5 @@ broadcast will raise a value error if canBroadcast returns False'''
 
     def getConnectAddress(self):
         '''the address of this port to establish TCP connections'''
-        return (self.getfqdn(), self.acceptPort)
+        return (self.getHostName(), self.acceptPort)
         
