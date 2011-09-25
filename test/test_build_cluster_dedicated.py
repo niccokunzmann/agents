@@ -2,7 +2,7 @@
 
 from test import *
 
-from stream.ClusterPart import ClusterPart
+from stream.ClusterPart import ClusterPart, ClusterAgent
 
 class test_build_cluster_dedicated(unittest.TestCase):
 
@@ -14,18 +14,19 @@ class test_build_cluster_dedicated(unittest.TestCase):
             cp.close()
 
     def newCP(self):
-        p = ClusterPart(name, groups)
+        p = ClusterPart(agent)
         self.__cp.append(p)
         return p
 
-    def test_join_cluster(self):
+    def test_join_one(self):
         p = self.newCP()
-        time.sleep(3)
+        time.sleep(0)
 
 
 
 if __name__ == '__main__':
     name, groups = beClusterPart()
+    agent = ClusterAgent(name, groups)
     l = []
     def test():
         try:
