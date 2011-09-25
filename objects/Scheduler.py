@@ -37,10 +37,7 @@ class Scheduler(threading.Thread):
 
     debug = 1
 
-    maxWaitingThreads = 1
-
-
-    def __init__(self):
+    def __init__(self, maxWaitingThreads = 1):
         threading.Thread.__init__(self)
         self._lock = thread.allocate_lock()
         self._newJobs = Queue.Queue()
@@ -50,6 +47,7 @@ class Scheduler(threading.Thread):
         self._lock = thread.allocate_lock()
         self.__running = 0
         self.__waiting = 0
+        self.maxWaitingThreads = maxWaitingThreads
 
 
     def stopped(self):

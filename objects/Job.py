@@ -1,7 +1,7 @@
 
 from Scheduler import Scheduler
 
-defaultScheduler = Scheduler()
+defaultScheduler = Scheduler(10)
 defaultScheduler.start()
 
 class Job(object):

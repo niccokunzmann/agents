@@ -61,6 +61,20 @@ class test_Scheduler(unittest.TestCase):
         time.sleep(0.5)
         self.assertTrue(s._newJobs.empty())
 
+    @unittest.skip('this is a performance test')
+    def test_manyJobs(self):
+        l=  []
+        m = 200
+        for i in range(1, m):
+            j = CountJob(i)
+            j.after(0)
+            l.append(j)
+        s = m * m * j.timeout * 0.04 + 0.004 * m
+        print s
+        time.sleep(s)
+        for i, j in enumerate(l):
+            self.assertEqual(0, j.count, '%i != 0 : %i' % (j.count,i))
+
 ##del test_Scheduler
 
 if __name__ == '__main__':
