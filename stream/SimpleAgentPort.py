@@ -49,7 +49,9 @@ otherwise this may walk into an endless loop
 
 
 class TCPSocketStreamWrapper(WrapReadFactory):
-    '''wrap a SocketStream around each read'''
+    '''wrap a SocketStream around each read
+this can be wrapped around a builder wrapping sockets to enable stream operations
+'''
 
     def __init__(self, stream):
         WrapReadFactory.__init__(self, stream, forList(SocketStream))
@@ -92,17 +94,41 @@ class SimpleAgentStreamBuilder(WrapReadFactory):
 StreamFactory.registerStream(SimpleAgentStreamBuilder)
 
 class SimpleAgentPortConnection(FactoryConnection):
+    '''This is a Connection class for SimpleAgentPort
+instances of this class contain information about the agent
+one is connecting to
+
+'''
     def __init__(self, agent, address, builder):
         FactoryConnection.__init__(self, builder)
-        self.agent = agent
-        self.address = address
+        self._agent = agent
+        self._address = address
 
     def connectTo(self, stream):
-        # todo: agent receives connection?
         FactoryConnection.connectTo(self, stream)
+        self.exchangeAgents()
+        self._agent.connectTo(self)
+
+    def exchangeAgents(self):
+        self.write(self._agent)
+        self.flush()
+        self.update()
+        agent = self.read(1)
+        
+        if not agent:
+            
+        
 
     def toTuple(self):
-        return self.agent, self.address, self.factory
+        return self._agent, self._address, self.factory
+
+    def getAgent(self):
+        '''return the agent this connection will connect to'''
+        return self._agent
+
+    def getAddress(self):
+        '''return the address the agent is located at'''
+        return self._address
 
 StreamFactory.registerStream(SimpleAgentPortConnection, None, \
                              lambda c: c.toTuple())
