@@ -1,0 +1,1 @@
+StreamFactory for __reduce__
