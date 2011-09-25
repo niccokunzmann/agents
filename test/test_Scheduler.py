@@ -2,6 +2,8 @@ from test import *
 
 from objects.Job import Job, Scheduler, defaultScheduler
 
+debug = True
+
 class CountJob(Job):
 
     def __init__(self, count, timeout = 0.005, *args):
@@ -66,16 +68,29 @@ class test_Scheduler(unittest.TestCase):
         l=  []
         m = 200
         for i in range(1, m):
-            j = CountJob(i)
+            j = CountJob(i, 0)
             j.after(0)
             l.append(j)
-        s = m * m * j.timeout * 0.04 + 0.004 * m
+        s = m * m * j.timeout * 0.04 + 0.006* m
         print s
         time.sleep(s)
         for i, j in enumerate(l):
             self.assertEqual(0, j.count, '%i != 0 : %i' % (j.count,i))
 
-##del test_Scheduler
+    @unittest.skip('this is a performance test')
+    def test_time(self):
+        m = 2000000
+        j = CountJob(m, 0)
+        j.after(0)
+        t = 10 # seconds
+        time.sleep(t)
+        c = m - j.count
+        j.count = 0
+        counts_per_sec = float(c) / t
+        if debug:
+            print 'counts per sec:', counts_per_sec
+
+##debug = False
 
 if __name__ == '__main__':
     unittest.main(exit = False)
