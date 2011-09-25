@@ -106,17 +106,18 @@ one is connecting to
 
     def connectTo(self, stream):
         FactoryConnection.connectTo(self, stream)
-        self.exchangeAgents()
+##        self.exchangeAgents()
         self._agent.connectTo(self)
 
     def exchangeAgents(self):
         self.write(self._agent)
         self.flush()
-        self.update()
-        agent = self.read(1)
-        
+        agent = []
+        while not agent:
+            self.update()
+            agent = self.read(1)
         if not agent:
-            
+            raise ValueError('no agent received')
         
 
     def toTuple(self):

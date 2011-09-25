@@ -9,7 +9,6 @@ ADDR = 0
 
 FQDN_REFRESH_TIME = 40
 
-from ConnectionFactory import DefaultConnectionFactoryFactory
 from MultiStream import MultiStream
 from SocketBroadcastStream import SocketBroadcastStream
 from Connection import Connection

@@ -2,28 +2,34 @@
 
 from test import *
 
-from stream.IPPort import IPPort
+from stream.ClusterPart import ClusterPart
 
 class test_build_cluster_dedicated(unittest.TestCase):
 
-    def test_send_manager(self):
-        ps.write(True)
-        port = IPPort(('localhost',), (6326,6328), (6327,))
-        port.broadcast()
-        self.fail()
+    def setUp(self):
+        self.__cp = []
 
+    def tearDown(self):
+        for cp in self.__cp:
+            cp.close()
 
+    def newCP(self):
+        p = ClusterPart(name, groups)
+        self.__cp.append(p)
+        return p
+
+    def test_join_cluster(self):
+        p = self.newCP()
+        time.sleep(3)
 
 
 
 if __name__ == '__main__':
-    ps = beDedicatedTest()
-    import thread
-    import time
+    name, groups = beClusterPart()
     l = []
     def test():
         try:
-            unittest.main(exit = False)
+            unittest.main(exit = False, verbosity = 2)
         finally:
             l.append(1)
     thread.start_new(test, ())
