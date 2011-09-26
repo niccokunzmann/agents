@@ -99,10 +99,14 @@ instances of this class contain information about the agent
 one is connecting to
 
 '''
-    def __init__(self, agent, address, builder):
+    def __init__(self, agent, address, builder, local = False):
         FactoryConnection.__init__(self, builder)
         self._agent = agent
         self._address = address
+        self._local = local
+
+    def isLocal(self):
+        return self._local
 
     def connectTo(self, stream):
         FactoryConnection.connectTo(self, stream)
@@ -192,7 +196,8 @@ should inherit from SimpleAgent'''
     def _newConnection(self, builder):
         '''return a new connection to this port around the stream'''
         addr = self.getConnectAddress()
-        connection = SimpleAgentPortConnection(self._agent, addr, builder)
+        connection = SimpleAgentPortConnection(self._agent, addr, builder, \
+                                               local = True)
         return connection
         
     def _newConnectedConnection(self, sock):

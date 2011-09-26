@@ -4,10 +4,12 @@ from distobj.objects.Group import Group, isGroup
 
 import thread
 
+import StreamFactory
+
 class ClusterAgent(SimpleAgent):
-    
 
     def __init__(self, name, groups = []):
+        SimpleAgent.__init__(self, name)
         if not self.default._lock:
             self.default._lock = thread.allocate_lock()
         self.default._groups = []
@@ -34,3 +36,25 @@ class ClusterAgent(SimpleAgent):
     def getGroups(self):
         '''return a list of groups the agent is in'''
         return self._groups[:]
+
+    def newConnection(self, connection):
+        '''handle a new connection
+connect if the agent has one group in common
+'''
+        agent = connection.getAgent()
+        if connection.isLocal() or agent != self:
+            for group in self.getGroups():
+                for group2 in agent.getGroups():
+                    if group == group2:
+                        connection.connect()
+                        break
+
+    def toTuple(self):
+        '''used to broadcast the agent'''
+        l = []
+        for group in self.getGroups():
+            l.append(group.getName())
+        return self.getName(), tuple(l)
+
+StreamFactory.registerStream(ClusterAgent, None, \
+                             lambda a: a.toTuple())

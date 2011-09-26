@@ -33,12 +33,11 @@ def debugMethod(func):
 ##def debugMethod(func):
 ##    return func
 
-class Scheduler(threading.Thread):
+class Scheduler(object):
 
     debug = 1
 
     def __init__(self, maxWaitingThreads = 1):
-        threading.Thread.__init__(self)
         self._lock = thread.allocate_lock()
         self._newJobs = Queue.Queue()
         self.__jobs = [] # time, job
@@ -47,6 +46,7 @@ class Scheduler(threading.Thread):
         self._lock = thread.allocate_lock()
         self.__running = 0
         self.__waiting = 0
+        self.__started = False
         self.maxWaitingThreads = maxWaitingThreads
 
 
@@ -59,24 +59,36 @@ class Scheduler(threading.Thread):
 
         self._newJobs.put((job, t))
 
+    def start(self):
+        with self._lock:
+            if not self.stopped() and not self.isAlive():
+                thread.start_new(self.run, ())
+                self.__started = True
+                return True
+            return False
 
     def run(self):
-        while not self.stopped():
-            self.__addJobs(block = False)
-            now = time.time()
+        try:
+            while not self.stopped():
+                self.__addJobs(block = False)
+                now = time.time()
 
-            while self.__jobs:
-                job, t = self.__getJob()
-                if t < now:
+                while self.__jobs:
+                    job, t = self.__getJob()
+                    if t < now:
 
-                    self.__doJob(job)
-                else:
+                        self.__doJob(job)
+                    else:
 
-                    self.__addJob(job, t)
-                    time.sleep(0.001)
-                    now = time.time()
-            self.__addJobs(block = True) # last line in loop
-
+                        self.__addJob(job, t)
+                        time.sleep(0.001)
+                        now = time.time()
+                self.__addJobs(block = True) # last line in loop
+        except:
+            if self.debug:
+                traceback.print_exc()
+        finally:
+            self.__started = False
 
     def __addJobs(self, block = True):
         while block or not self._newJobs.empty():
@@ -128,6 +140,8 @@ class Scheduler(threading.Thread):
             if self.debug >= 1:
                 traceback.print_exc()
             
+    def isAlive(self):
+        return self.__started
 
     def __waitJob(self):
         with self._lock:

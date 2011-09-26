@@ -111,6 +111,9 @@ the saver writes the object to the stream'''
 instances and classes are tested'''
         return hasattr(obj, 'getStreamClassName')
 
+    def close(self):
+        '''close the underlying stream'''
+        self.stream.close()
 
 class FactoryReader(Stream):
     '''This class is a Helper for the StreamFactory to read and write other
