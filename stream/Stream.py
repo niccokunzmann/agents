@@ -1,5 +1,6 @@
 
 class StreamError(Exception):
+    '''Base Error for Stream exceptions'''
     pass
 
 class BrokenStreamError(EOFError, StreamError):

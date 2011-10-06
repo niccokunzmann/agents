@@ -29,6 +29,14 @@ class Group(GlobalObject):
         '''return True because the object is a group object'''
         return True
 
+    def __iter__(self):
+        '''threadsave iterator over the members of this group'''
+        return iter(self.getMembers())
+
+    def __contains__(self, member):
+        '''is the meber of this group'''
+        return member in self.__members
+
 def isGroup(obj):
     '''return wether the given object is a Group object'''
     return hasattr(obj, 'isGroup') and obj.isGroup()

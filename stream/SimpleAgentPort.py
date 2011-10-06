@@ -113,16 +113,16 @@ one is connecting to
 ##        self.exchangeAgents()
         self._agent.connectTo(self)
 
-    def exchangeAgents(self):
-        self.write(self._agent)
-        self.flush()
-        agent = []
-        while not agent:
-            self.update()
-            agent = self.read(1)
-        if not agent:
-            raise ValueError('no agent received')
-        
+##    def exchangeAgents(self):
+##        self.write(self._agent)
+##        self.flush()
+##        agent = []
+##        while not agent:
+##            self.update()
+##            agent = self.read(1)
+##        if not agent:
+##            raise ValueError('no agent received')
+##        
 
     def toTuple(self):
         return self._agent, self._address, self.factory

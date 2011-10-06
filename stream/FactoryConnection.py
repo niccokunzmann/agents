@@ -1,18 +1,20 @@
 
 from Connection import *
 
-
 class UnableToConnectError(ConnectionError):
+    '''The stream is unable to connect'''
     pass
+
+
 
 
 class FactoryConnection(Connection):
 
-    def __init__(self, factory):
+    def __init__(self, factory, stream = None):
         '''create a new connection
 the factory as firt argument returns a new stream when calling read(1)'''
         self.factory = factory
-        Connection.__init__(self)
+        Connection.__init__(self, stream)
 
     def connect(self):
         '''connect to the stream returned by the factory'''
@@ -27,4 +29,4 @@ the factory as firt argument returns a new stream when calling read(1)'''
                                 ' read from the factory %r' % self.factory)
             stream = stream[0]
         self.connectTo(stream)
-        
+

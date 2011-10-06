@@ -39,15 +39,17 @@ class ClusterAgent(SimpleAgent):
 
     def newConnection(self, connection):
         '''handle a new connection
-connect if the agent has one group in common
+connect if the agent has at least one group in common
 '''
         agent = connection.getAgent()
-        if connection.isLocal() or agent != self:
+        if connection.isLocal():
+            connection.connect()
+        if agent != self:
             for group in self.getGroups():
                 for group2 in agent.getGroups():
                     if group == group2:
                         connection.connect()
-                        break
+                        return
 
     def toTuple(self):
         '''used to broadcast the agent'''
