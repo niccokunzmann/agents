@@ -75,20 +75,29 @@ class GlobalsImporter(object):
         loader = self.fullNames.get(fullname, None)
         if loader is not None and loader.acceptImportInModule():
             return loader
-        self.checkForDelete()
         return None
 
     def checkForDelete(self):
-        print 'shouldBeDeleted:', len(self.fullNames)
+        for fullname in self.fullNames:
+            if self.fullNames.has_key(fullname):
+                return
+        self.delete()
 
     def addLoader(self, fullname, loader):
         self.fullNames[fullname] = loader
+
+    def delete(self):
+        'this removes the object from sys.meta_path'
+        sys.meta_path.remove(self)
 
     def __eq__(self, other):
         return type(self).__name__ == type(other).__name__
 
 globalsImporter = GlobalsImporter()
 
+for importer in sys.meta_path[:]:
+    if hasattr(importer, 'checkForDelete'):
+        importer.checkForDelete()
 sys.meta_path.append(globalsImporter)
 
 
@@ -150,6 +159,7 @@ for moduleName in modules:
 for loader in loaders:
     loader.load_module(loader.fullname)
 
+del loader
 del loaders # donnot drop weak references till the end
 
 obj = None

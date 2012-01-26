@@ -183,8 +183,38 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
         self.dump_and_load()
         self.assertAllModulesLoaded([m1Name, m2Name])
         self.assertEquals(MeetingPlace.moduleLoaded1, MeetingPlace.moduleLoaded0)
-        
-    
+
+def findReferencePath(objects, targets):
+    import gc
+    depth = 0
+    while objects:
+        reference = objects.pop()
+        if len(reference) > depth:
+            print 'newDepth:', depth, 'paths:', len(objects) + 1
+            depth = len(reference)
+        for referrer in gc.get_referrers(reference[0]):
+            if referrer in objects or referrer in reference:
+                continue
+            if referrer == reference:
+                continue
+            newReference = [referrer] + reference
+            if referrer in targets:
+                yield newReference
+            objects.append(newReference)
+
+def printReferencePath(objects, targets):
+    import types
+    for path in findReferencePath(objects, targets):
+        for element in path:
+            if type(element) == types.ModuleType:
+                print 'module', element.__name__
+            else:
+                print type(element).__name__, str(element)[:60]
+
+        print '-' * 80
+
+
+
     
 if __name__ == '__main__':
     unittest.main(exit = False, verbosity = 1)
