@@ -1,5 +1,6 @@
 from Stream import Stream
 
+import sys
 import pickle
 import StreamFactory
 
@@ -18,6 +19,27 @@ noValue = NoValue()
 
 del NoValue
 
+class Unpickler(pickle.Unpickler):
+
+    ERRORMSG_FIND_CLASS = '{type} object as module "{module}" has '\
+                          'not attribute "{attr}"'
+
+    def find_class(self, module, name):
+        # Subclasses may override this
+        __import__(module)
+        mod = sys.modules[module]
+        l = []
+        klass = getattr(mod, name, l)
+        if klass is l:
+            ty = type(mod)
+            tyname = getattr(ty, '__name__', repr(ty))
+            raise AttributeError(self.ERRORMSG_FIND_CLASS.format(\
+                                        type = tyname, \
+                                        module = module, \
+                                        attr = name))
+        return klass
+        
+
 class PickleStream(Stream):
 
     def __init__(self, stream):
@@ -33,7 +55,7 @@ class PickleStream(Stream):
         self._pickler = pickle.Pickler(self.stream)
     
     def _setUnpickler(self):
-        self._unpickler = pickle.Unpickler(self.stream)
+        self._unpickler = Unpickler(self.stream)
 
     def read(self, size = -1):
         'size is ignored'

@@ -25,7 +25,6 @@ class SimpleAgent(GlobalObject, FactoryConnection):
         '''add a stream to the streams'''
         self._connected = True
         self.stream.addStream(stream)
-        
 
 StreamFactory.registerStream(SimpleAgent, None, \
                              lambda a: (a.getName(),))

@@ -5,12 +5,7 @@ from test import *
 from stream.ClusterPart import ClusterPart, ClusterAgent, ClusterIPPort
 from test_build_cluster import *
 
-class HelloGreeting(object):
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+from TestObjects import *
 
 class test_build_cluster_dedicated(unittest.TestCase):
 

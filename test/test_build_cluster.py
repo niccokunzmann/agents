@@ -90,7 +90,7 @@ class test_build_cluster(unittest.TestCase):
             self.assertTrue(p.printOnFail())
 
 ##    @unittest.skip('try above')
-    def test_join_n(self, n = 4):
+    def test_join_n(self, n = 1, thread = False):
         # setup
         a1 = ClusterAgent('test_join_n', ['test_join_n'])
         self.p = self.newCP(a1, [ClusterIPPort])
@@ -103,7 +103,11 @@ class test_build_cluster(unittest.TestCase):
         #test
         try:
             self.error = 0
-            thread.start_new(self._join_n(a1, n))
+            self.state = 'not ok'
+            if thread:
+                thread.start_new(self._join_n, (a1, n))
+            else:
+                self._join_n(a1, n)
             def check():
                 1 / self.error
                 raise TypeError()
@@ -114,7 +118,7 @@ class test_build_cluster(unittest.TestCase):
                 if self.error is None:
                     self.assertEquals('ok', self.state, 'reached the end')
                 else:
-                    raise self.error
+                    raise self.error[0], self.error[1], self.error[2]
         finally:
             # teardown
             for p in p_list:
@@ -130,9 +134,11 @@ class test_build_cluster(unittest.TestCase):
                     self.state = 1
                     a1.update()
                     self.state = 2
-                    greeting = a1.read(1)
+                    greeting = a1.read(10)
                     self.state = 3
                     self.assertNotEqual([], greeting, 'greeting received')
+                    self.assertNotEqual('', greeting, 'greeting received')
+                    print 'greeting:', repr(greeting)
                     greeting = greeting[0]
                     self.state = 4
                     self.assertEqual('hello!', greeting.hello)

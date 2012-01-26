@@ -1,6 +1,7 @@
 
 from Stream import *
 
+import sys
 import socket
 
 import StreamFactory
@@ -28,15 +29,19 @@ class TCPConnectionEstablisher(Stream):
             break
         else:
             addr_info  = socket.getaddrinfo(*self.address_info)
+            ty = None
             for family, type, proto, canonname, addr in addr_info:
                 sock = socket.socket(family, type, proto)
                 try:
                     sock.connect(addr)
-                except ():
+                except socket.error:
+                    ty, er, tb = sys.exc_info()
                     self.stream = None
                     continue
                 self.stream = sock
                 return
+            if ty is not None:
+                raise ty, ty(*(er.args + (str(addr_info),))), tb
                 
 
     def read(self, count = 1):
