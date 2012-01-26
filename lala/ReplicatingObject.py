@@ -35,7 +35,9 @@ class ReplicatingObject(object):
         if not os.path.isfile(filepath):
             filepath += 'w' # .pyw files
         return [''.join(linecache.getlines(filepath, module.__dict__)), \
-                module.__name__, module.__file__]
+                module.__name__,
+                getattr(module, '__package__'),
+                module.__file__]
 
     def hasModuleDependency(self, module):
         return self.getModuleKey(module) in self.modules
@@ -68,8 +70,8 @@ class GlobalsImporter(object):
         self.fullNames = weakref.WeakValueDictionary()
 
     def find_module(self, fullname, path = None):
-##        print 'find_module:', fullname, path
-##        print self.fullNames.keys()
+        print 'find_module:', fullname, path
+        print self.fullNames.keys()
         loader = self.fullNames.get(fullname, None)
         if loader is not None and loader.acceptImportInModule():
             return loader
@@ -91,7 +93,7 @@ sys.meta_path.append(globalsImporter)
 
 
 class Loader(object):
-    def __init__(self, source, fullname, filename = '<>'):
+    def __init__(self, source, fullname, package, filename = '<>'):
         self.__dict__.update(locals())
         self.loaded = False
         self.module = types.ModuleType(fullname)
@@ -118,7 +120,7 @@ class Loader(object):
         module.__builtins__ = __builtins__
         module.__file__ = self.filename
         module.__loader__ = self
-        module.__path__ = []
+        module.__package__ = self.package
         code = compile(self.source, self.filename, 'exec')
         exec code in module.__dict__
 

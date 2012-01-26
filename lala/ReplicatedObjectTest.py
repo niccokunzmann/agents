@@ -136,7 +136,7 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
             moduleNames.append(moduleName)
             module = self.importModuleByName(moduleName)
             self.rep.addModuleDependency(module)
-        self.rep.addModuleDependency('cache') # suppress warnings
+        self.rep.addModuleDependency(__import__('cache')) # suppress warnings
         self.assertAllModulesLoaded(moduleNames)
         MeetingPlace.loadedModules = []
         self.dump_and_load()
@@ -159,14 +159,12 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
             
     def test_loads_modules_only_ones(self):
         moduleLoaded = '''if 1:
-            print __import__
             import MeetingPlace
             import cache.moduleLoaded
             MeetingPlace.loadedModules.append(__name__)
             MeetingPlace.moduleLoaded0 = globals()
             '''
         moduleLoading = '''if 1:
-            print __import__
             import cache.moduleLoaded as moduleLoaded
             import MeetingPlace
             MeetingPlace.loadedModules.append(__name__)
@@ -184,8 +182,6 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
         sys.modules.pop(m2Name)
         self.dump_and_load()
         self.assertAllModulesLoaded([m1Name, m2Name])
-        print id(MeetingPlace.moduleLoaded0)
-        print id(MeetingPlace.moduleLoaded1)
         self.assertEquals(MeetingPlace.moduleLoaded1, MeetingPlace.moduleLoaded0)
         
     
