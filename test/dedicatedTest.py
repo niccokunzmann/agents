@@ -146,3 +146,31 @@ if the function did not succeed
         time.sleep(0.01)
     return kw.get('default', None)
 
+def launchClusterPart(testname, name, groups):
+    '''launches the test
+returns a DedicatedTestStream object
+so do not forget to call printOnFail()'''
+    filename, methodname = testname.rsplit('.', 1)
+    filename += '.py'
+    if not os.path.exists(filename):
+        filename+= 'w'
+        if not os.path.exists(filename):
+            raise ValueError('test %r not found as %r' % (\
+                testname, filename[:-1]))
+    
+    args = [sys.executable, filename, testname, name]
+    args.extend(map(str, groups))
+    pipe = subprocess.Popen(args, stdin = PIPE, stdout = PIPE, stderr = PIPE)
+    return DedicatedTestStream(pipe.stdout, pipe, filename)
+
+def beClusterPart():
+    '''=> name, groups
+return the name of the cluster part and the groups to join'''
+    name_groups = sys.argv[2:]
+    sys.argv = sys.argv[:2]
+    if len(name_groups) == 0:
+        print 'start file with > filename <testcase> '\
+              '<clusterpart name> [<groups>]*'
+        raise ValueError('cannot act as cluster part because name is not given')
+    name = name_groups[0]
+    return name, name_groups[1:]

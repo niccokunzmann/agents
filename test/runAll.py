@@ -1,5 +1,9 @@
 
+import sys
+sys.path.append(r'..\..')
+
 from test import *
+
 
 if __name__ == '__main__':
     try:

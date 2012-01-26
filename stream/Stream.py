@@ -1,5 +1,6 @@
 
 class StreamError(Exception):
+    '''Base Error for Stream exceptions'''
     pass
 
 class BrokenStreamError(EOFError, StreamError):
@@ -15,24 +16,31 @@ class Stream(object):
         self.stream = stream
 
     def read(self, count = 0):
-        raise NotImplementedError('read is not implemented')
-        
+        self._raiseNotImplementd('read')
+
     def update(self):
         '''update the stream for reading'''
-        raise NotImplementedError('update is not implemented')
+        self._raiseNotImplementd('update')
        
-
     def write(self, obj):
-        raise NotImplementedError('write is not implemented')
+        self._raiseNotImplementd('write')
 
     def flush(self):
         '''flush the stream after writing'''
-        raise NotImplementedError('flush is not implemented')
+        self._raiseNotImplementd('flush')
+
+    def close(self):
+        '''close the stream'''
+        self._raiseNotImplementd('close')
 
     def _overtake_attribute(self, attr):
         if hasattr(self.stream, attr):
             setattr(self, attr, getattr(self.stream, attr))
 
+    def _raiseNotImplementd(self, method):
+        raise NotImplementedError('%s is not implemented for %s objects' % \
+                                  (method, self.getStreamClassName()))
+    
     @classmethod
     def getStreamClassName(cls):
         return cls.__module__ + '__' + cls.__name__
@@ -41,6 +49,3 @@ class Stream(object):
         '''return the fileno() of the underlying stream'''
         return self.stream.fileno()
 
-    def close(self):
-        '''close the stream'''
-        raise NotImplementedError('close  is not implemented')

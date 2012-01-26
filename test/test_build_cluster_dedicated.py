@@ -2,29 +2,51 @@
 
 from test import *
 
-from stream.IPPort import IPPort
+from stream.ClusterPart import ClusterPart, ClusterAgent, ClusterIPPort
+from test_build_cluster import *
+
+from TestObjects import *
 
 class test_build_cluster_dedicated(unittest.TestCase):
 
-    def test_send_manager(self):
-        ps.write(True)
-        port = IPPort(('localhost',), (6326,6328), (6327,))
-        port.broadcast()
-        self.fail()
+    def setUp(self):
+        self.__cp = []
 
+    def tearDown(self):
+        for cp in self.__cp:
+            cp.close()
 
+    def newCP(self, *args):
+        p = TestClusterPart(agent, *args)
+        self.__cp.append(p)
+        return p
+
+    def test_join_one(self):
+        p = self.newCP([ClusterIPPort])
+        time.sleep(10)
+
+    def test_join_n(self):
+        p = self.newCP([ClusterIPPort])
+        a1 = ClusterAgent('test_join_n', ['test_join_n'])
+        time.sleep(TIMEOUT_JOIN)
+        self.assertTrue(a1.isConnected())
+        a1.write(HelloGreeting(agent = agent, hello = 'hello!'))
+        greetings = a1.read(1)
+        time.sleep(TIMEOUT_RECV)
+        
 
 
 
 if __name__ == '__main__':
-    ps = beDedicatedTest()
-    import thread
-    import time
+    name, groups = beClusterPart()
+    agent = ClusterAgent(name, groups)
     l = []
     def test():
         try:
-            unittest.main(exit = False)
+            unittest.main(exit = False, verbosity = 2)
         finally:
             l.append(1)
     thread.start_new(test, ())
-    doTimeout(lambda :1/len(l), ZeroDivisionError, timeout = 10)
+    doTimeout(lambda :1/len(l), ZeroDivisionError, timeout = TIMEOUT_CLUSTER)
+    print 'exiting'
+    sys.exit(0)

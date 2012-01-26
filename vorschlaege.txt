@@ -1,0 +1,4 @@
+StreamFactory for __reduce__
+
+
+add conection to agent in same program

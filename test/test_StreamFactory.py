@@ -176,6 +176,11 @@ class test_FactoryReader(unittest.TestCase):
         self.test_1()
         self.test__1231()
 
+    def test_unicode(self):
+        self.rw_eq(u'lalilu')
+        self.rw_eq(u'')
+        self.rw_eq(u'lalilu !!\u1234')
+
 def test_module():
     unittest.main(exit = False, verbosity = 1)
 

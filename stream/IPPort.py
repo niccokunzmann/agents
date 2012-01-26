@@ -2,11 +2,13 @@
 from Port import *
 
 import socket
+import time
 
 PORT = 1
 ADDR = 0
 
-from ConnectionFactory import DefaultConnectionFactoryFactory
+FQDN_REFRESH_TIME = 40
+
 from MultiStream import MultiStream
 from SocketBroadcastStream import SocketBroadcastStream
 from Connection import Connection
@@ -40,18 +42,21 @@ the factory constructor must take a stream of string
         self._broadcastReceiver = None
         self.broadcast_addresses = list(self.broadcast_adresses)
         self._connectionBuffer = []
+        self.acceptPort = 0
+        self.__lastfqdntime = 0
 
-    def newFactory(self, *args):
+    def _newFactory(self, *args):
         '''apply the arguments to the factory constructor and return the value'''
         raise NotImplementedError('implement this to use the factory')
         
     def open(self, port = None):
-        '''open this port for reading and writing
-build new streams from sockets'''
-        if port is not None:
-            self.port = port
+        '''open this port for reading and writing,
+build new streams from sockets
+the optimal port argument is preferred before the port attribute
+and countains the port number of udp  sockets listening
+port does not influence the port number for accepting connecions'''
         self.openBroadcastSend()
-        self.openBroadcastReceive()
+        self.openBroadcastReceive(port)
         self.openAccept()
 
     def openBroadcastSend(self):
@@ -66,13 +71,16 @@ build new streams from sockets'''
         broadcastStream = SocketBroadcastStream(sockets, \
                                                 self.broadcast_addresses)
         broadcastStream = CachingStringStream(broadcastStream)
-        broadcastStream = self.newFactory(broadcastStream)
+        broadcastStream = self._newFactory(broadcastStream)
         self._broadcastStream = broadcastStream
 
-    def openBroadcastReceive(self):
-        '''open the port for receiving broadcasts'''
+    def openBroadcastReceive(self, port = None):
+        '''open the port for receiving broadcasts
+for ore information about port see open(port)'''
         if self._broadcastReceiver:
             raise ValueError('first disconnect to open for receiving')
+        if port is not None:
+            self.port = port
         sockStreams = []
         buf = -1
         for fam in self.address_families:
@@ -84,7 +92,7 @@ build new streams from sockets'''
             sockStreams.append(s)
         broadcastReceiver = MultiStream(sockStreams)
         broadcastReceiver = CachingStringStream(broadcastReceiver, buf)
-        broadcastReceiver = self.newFactory(broadcastReceiver)
+        broadcastReceiver = self._newFactory(broadcastReceiver)
         self._broadcastReceiver = broadcastReceiver
 
     def openAccept(self):
@@ -141,10 +149,10 @@ build new streams from sockets'''
         self._acceptStream.update()
         new_connections = self._acceptStream.read()
         for con in new_connections:
-            con = self.newConnectedConnection(con)
+            con = self._newConnectedConnection(con)
             self._connectionBuffer.append(con)
 
-    def newConnectedConnection(self, socket):
+    def _newConnectedConnection(self, socket):
         '''return a connection object for the given connected socket'''
         raise NotImplementedError('implement this to use the factory')
 
@@ -156,7 +164,34 @@ build new streams from sockets'''
         '''send the objects to other ports'''
         self._broadcastStream.flush()
 
+    def canBroadcast(self):
+        '''return wether the port can broadcast or not'''
+        return self._acceptStream is not None
+
     def broadcast(self):
-        '''broadcast connection information'''
-        raise NotImplementedError('implement this to use the factory')
+        '''broadcast connection information
+broadcast will raise a value error if canBroadcast returns False'''
+        if not self.canBroadcast():
+            raise ValueError('the port cannot broadcast. \n'\
+                             'make sure it is opened for broadcast')
+        conn = self._getBroadcastConnection()
+        self.write(conn)
+        self.flush()
+
+    def _getBroadcastConnection(self):
+        '''return the connection information to broadcast'''
+        raise NotImplementedError('implement this to use broadcast')
     
+    def getHostName(self):
+        '''return the fully qualified name for this host'''
+        if time.time() > self.__lastfqdntime + FQDN_REFRESH_TIME:
+            self.__fqdn = f = socket.gethostname()
+            return f
+        else:
+            return self.__fqdn
+        return 
+
+    def getConnectAddress(self):
+        '''the address of this port to establish TCP connections'''
+        return (self.getHostName(), self.acceptPort)
+        

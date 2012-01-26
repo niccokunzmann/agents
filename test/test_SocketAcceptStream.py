@@ -10,10 +10,10 @@ class test_SocketAcceptStream(unittest.TestCase):
     def setUp(self):
         s = socket.socket()
         s.bind(('localhost', 0))
-        s.listen(1)
+        s.listen(100)
         s2 = socket.socket()
         s2.bind(('localhost', 0))
-        s2.listen(1000)
+        s2.listen(100)
         self.port = s.getsockname()[1]
         self.ports = (self.port, s2.getsockname()[1])
         self.addr = ('localhost', self.port)
@@ -23,6 +23,7 @@ class test_SocketAcceptStream(unittest.TestCase):
     def test_conn(self):
         s = socket.socket()
         s.connect(self.addr)
+        time.sleep(0.01)
         self.a.update()
         l = self.a.read()
         self.assertNotEqual([], l)

@@ -1,27 +1,37 @@
+
+import time
+
 from Stream import *
 
+import StreamFactory
 
 class FileStream(Stream):
     '''The FileStream takes as many attributes as possible
 from the uderlying stream
 if not defined it adds functionality as readline, readlines,
-flush, close, update
+flush, close, update, writelines
 
 so the underlying stream only has to define read and write
 '''
+    _take = ['fileno', 'flush', 'read', 'write', 'writelines', 'readline', \
+          'readlines', 'update', 'close']
 
-    def __init__(self, stream):
+    def __init__(self, stream, take = _take, ignore = []):
         Stream.__init__(self, stream)
+        for attr in take:
+            if attr not in ignore:
+                self._overtake_attribute(attr)
 
-        self._overtake_attribute('fileno')
-        self._overtake_attribute('flush')
-        self._overtake_attribute('read')
-        self._overtake_attribute('write')
-        self._overtake_attribute('writelines')
-        self._overtake_attribute('readline')
-        self._overtake_attribute('readlines')
-        self._overtake_attribute('update')
-        self._overtake_attribute('close')
+##        self._overtake_attribute('fileno')
+##        self._overtake_attribute('flush')
+##        self._overtake_attribute('read')
+##        self._overtake_attribute('write')
+##        self._overtake_attribute('writelines')
+##        self._overtake_attribute('readline')
+##        self._overtake_attribute('readlines')
+##        self._overtake_attribute('update')
+##        self._overtake_attribute('close')
+    del _take
 
     def readline(self):
         'read a line from the stream until\\n'
@@ -69,3 +79,6 @@ so the underlying stream only has to define read and write
     def close(self):
         'do nothing'
         pass
+
+
+StreamFactory.registerStream(FileStream)

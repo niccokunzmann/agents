@@ -3,12 +3,18 @@ import sys
 sys.path.append('..')
 
 import unittest
-import winpdb
+#import winpdb
+
+try:
+    import distobj
+except ImportError:
+    sys.path.append(r'..\..')
 
 import os
 import traceback
 
 import pickle
+import thread
 
 try:
     import io
