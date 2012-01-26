@@ -1,5 +1,6 @@
 
 import os
+import sys
 import unittest 
 import linecache
 
@@ -15,7 +16,14 @@ class ReplicatedObjectBaseTest(unittest.TestCase):
         self.rep = ReplicatingObject.ReplicatingObject()
 
     def dump_and_load(self):
-        return loads(dumps(self.rep))
+        s = dumps(self.rep)
+        if not hasattr(self, 'modulesToDeleteByLoad'):
+            self.modulesToDeleteByLoad = []
+        for fileName in self.modulesToDeleteByLoad:
+            if os.path.isfile(fileName):
+                os.remove(fileName)
+        self.modulesToDeleteByLoad = []
+        return loads(s)
 
 
 class ReplicatedObjectTest(ReplicatedObjectBaseTest):
@@ -74,6 +82,7 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
 
     def setUp(self):
         self.rep = ReplicatingObject.ReplicatingObject()
+        self.modulesToDeleteByLoad = []
         import MeetingPlace
         MeetingPlace.loadedModules = []
 
@@ -88,6 +97,7 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
 
     def dump_and_load_as_module(self, name, code):
         moduleName = self.addCache(name, code)
+        self.rep.addModuleDependency(__import__('cache'))
         self.rep.addModuleDependency(__import__(moduleName))
         return self.dump_and_load()
         
@@ -115,6 +125,7 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
     def test_load_several_modules(self):
         moduleN = '''if 1:
             import MeetingPlace
+            print 'haha', __name__
             MeetingPlace.loadedModules.append(__name__)'''
         baseName = 'module%s'
         number_of_modules = 5
@@ -125,6 +136,7 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
             moduleNames.append(moduleName)
             module = self.importModuleByName(moduleName)
             self.rep.addModuleDependency(module)
+        self.rep.addModuleDependency('cache') # suppress warnings
         self.assertAllModulesLoaded(moduleNames)
         MeetingPlace.loadedModules = []
         self.dump_and_load()
@@ -139,16 +151,27 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
             self.assertIn(moduleName, MeetingPlace.loadedModules)
 
     def importModuleByName(self, moduleName):
-        return __import__(moduleName, fromlist = [moduleName])
+        module = __import__(moduleName, fromlist = [moduleName])
+        self.modulesToDeleteByLoad.append(module.__file__)
+        self.modulesToDeleteByLoad.append(module.__file__+'c')
+        self.modulesToDeleteByLoad.append(module.__file__[:-1])
+        return module
             
     def test_loads_modules_only_ones(self):
         moduleLoaded = '''if 1:
+            print __import__
             import MeetingPlace
+            import cache.moduleLoaded
             MeetingPlace.loadedModules.append(__name__)
+            MeetingPlace.moduleLoaded0 = globals()
             '''
         moduleLoading = '''if 1:
-            import moduleLoaded, MeetingPlace
+            print __import__
+            import cache.moduleLoaded as moduleLoaded
+            import MeetingPlace
             MeetingPlace.loadedModules.append(__name__)
+            MeetingPlace.moduleLoading = globals()
+            MeetingPlace.moduleLoaded1 = moduleLoaded.__dict__
             '''
         
         m1Name = self.addCache('moduleLoaded', moduleLoaded)
@@ -157,10 +180,15 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
         self.rep.addModuleDependency(self.importModuleByName(m2Name))
         self.assertAllModulesLoaded([m1Name, m2Name])
         MeetingPlace.loadedModules = []
+        sys.modules.pop(m1Name)
+        sys.modules.pop(m2Name)
         self.dump_and_load()
         self.assertAllModulesLoaded([m1Name, m2Name])
+        print id(MeetingPlace.moduleLoaded0)
+        print id(MeetingPlace.moduleLoaded1)
+        self.assertEquals(MeetingPlace.moduleLoaded1, MeetingPlace.moduleLoaded0)
         
-        
+    
     
 if __name__ == '__main__':
     unittest.main(exit = False, verbosity = 1)

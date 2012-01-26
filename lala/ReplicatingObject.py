@@ -1,5 +1,6 @@
 
 import sys
+import  os
 import linecache
 import types
 
@@ -28,7 +29,13 @@ class ReplicatingObject(object):
         self.modules[moduleKey] = self.getModuleEntry(module)
 
     def getModuleEntry(self, module):
-        return linecache.getlines(module.__file__, module.__dict__)
+        filepath = module.__file__
+        if filepath.lower().endswith('.pyc'):
+            filepath = filepath[:-1]
+        if not os.path.isfile(filepath):
+            filepath += 'w' # .pyw files
+        return [''.join(linecache.getlines(filepath, module.__dict__)), \
+                module.__name__, module.__file__]
 
     def hasModuleDependency(self, module):
         return self.getModuleKey(module) in self.modules
@@ -49,44 +56,102 @@ locals().update(__import__(__import__.__module__).__dict__)
 __builtins__ = vars(__import__('__builtin__'))
 
 types = __import__('types')
+sys = __import__('sys')
+weakref = __import__('weakref')
 
 loadedModules = {} # name : Module
 
+
+class GlobalsImporter(object):
+
+    def __init__(self):
+        self.fullNames = weakref.WeakValueDictionary()
+
+    def find_module(self, fullname, path = None):
+##        print 'find_module:', fullname, path
+##        print self.fullNames.keys()
+        loader = self.fullNames.get(fullname, None)
+        if loader is not None and loader.acceptImportInModule():
+            return loader
+        self.checkForDelete()
+        return None
+
+    def checkForDelete(self):
+        print 'shouldBeDeleted:', len(self.fullNames)
+
+    def addLoader(self, fullname, loader):
+        self.fullNames[fullname] = loader
+
+    def __eq__(self, other):
+        return type(self).__name__ == type(other).__name__
+
+globalsImporter = GlobalsImporter()
+
+sys.meta_path.append(globalsImporter)
+
+
 class Loader(object):
-    def __init__(self, source):
-        self.source = source
+    def __init__(self, source, fullname, filename = '<>'):
+        self.__dict__.update(locals())
+        self.loaded = False
+        self.module = types.ModuleType(fullname)
+        self.canBeLoaded = True
 
-    def get_source(self):
+    def load_module(self, fullname):
+        self.assertCanLoad(fullname)
+        if self.loaded: # fix: race condition
+            return self.module
+        self.loaded = True
+        self.executeModule(self.module)
+        return self.module
+
+    def acceptImportInModule(self):
+        return self.canBeLoaded
+
+    def assertCanLoad(self, fullname):
+        if fullname != self.fullname:
+            raise ValueError('can only import %s but should import %s' % \
+                             (self.fullname, fullname))
+
+    def executeModule(self, module):
+        print 'executeModule:', self.fullname
+        module.__builtins__ = __builtins__
+        module.__file__ = self.filename
+        module.__loader__ = self
+        module.__path__ = []
+        code = compile(self.source, self.filename, 'exec')
+        exec code in module.__dict__
+
+    def get_source(self, fullname):
+        self.assertCanLoad(fullname)
         return self.source
+    get_data = get_source
+    def get_code(self, fullname):
+        return compile(self.get_source(fullname), self.filename, 'exec')
+    def get_filename(self):
+        return self.filename
 
-    
+    def __eq__(self, other):
+        return type(self) == type(other)
 
-def _import(name, *args, **kw):
-    global __builtins__
-    print '_import:', name, args, kw
-    __builtins__ = __import__('__builtin__')
-    if name in loadedModules:
-        return loadedModules[name]
-    if name in modules:
-        return loadModule(name)
-    return __import__(name, *args, **kw)
+    def delete(self):
+        self.canBeLoaded = False
 
-def loadModule(module):
-    global __builtins__
-    __builtins__ = __import__('__builtin__')
-    mod = types.ModuleType(module)
-    mod.__builtins__ = __builtins__
-    mod.__name__ = module
-    mod.__import__ = _import
-    code = compile(''.join(modules[module]), 'file:' + module, 'exec')
-    exec code in vars(mod)
-    return mod
+loaders = []
 
-for module in modules:
-    print 'loading:', module, modules[module]
-    loadModule(module)
+for moduleName in modules:
+    print 'loader:', moduleName
+    loader = Loader(*modules[moduleName])
+    loaders.append(loader)
+    globalsImporter.addLoader(moduleName, loader)
+
+for loader in loaders:
+    loader.load_module(loader.fullname)
+
+del loaders # donnot drop weak references till the end
 
 obj = None
+
 '''
 
     def __reduce__(self):
@@ -107,4 +172,3 @@ obj = None
                 R(R(getattr, globalVars, 'pop'), 'obj')
                 ), -1)
         return obj.__reduce__()
-    
