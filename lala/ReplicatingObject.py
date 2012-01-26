@@ -25,7 +25,7 @@ class ReplicatingObject(object):
 
     def addModuleDependency(self, module):
         moduleKey = self.getModuleKey(module)
-        self.modules[moduleKey] = self.getModuleEntry(module))
+        self.modules[moduleKey] = self.getModuleEntry(module)
 
     def getModuleEntry(self, module):
         return linecache.getlines(module.__file__, module.__dict__)
@@ -88,7 +88,6 @@ for module in modules:
 
 obj = None
 '''
-        
 
     def __reduce__(self):
         code = self.getReplicationCode()

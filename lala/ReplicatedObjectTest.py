@@ -30,9 +30,9 @@ class ReplicatedObjectTest(ReplicatedObjectBaseTest):
         self.dump_and_load()
 
     def test_has_module_as_dependent(self):
-        import sys
-        self.rep.addModuleDependency(sys)
-        self.assertTrue(self.rep.hasModuleDependency(sys))
+        import os
+        self.rep.addModuleDependency(os)
+        self.assertTrue(self.rep.hasModuleDependency(os))
 
 class MockReplicatingObject(ReplicatingObject.ReplicatingObject):
 
