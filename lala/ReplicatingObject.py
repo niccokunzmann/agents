@@ -28,6 +28,10 @@ class ReplicatingObject(object):
         moduleKey = self.getModuleKey(module)
         self.modules[moduleKey] = self.getModuleEntry(module)
 
+    def addCodeDependency(self, code, codeName, locals = {}, \
+                          __package__ = None,  __file__ = ''):
+        self.modules[codeName] = [code, codeName, __package__, __file__]
+
     def getModuleEntry(self, module):
         filepath = module.__file__
         if filepath.lower().endswith('.pyc'):

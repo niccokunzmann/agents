@@ -57,7 +57,7 @@ def wrapSocketForPickle(sock):
     return PickleStream.PickleStream(file)
 
     
-def createPickleConnection(address):
-    sock = create_connection(address)
+def createPickleConnection(address, *args, **kw):
+    sock = create_connection(address, *args, **kw)
     return wrapSocketForPickle(sock)
 
