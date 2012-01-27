@@ -125,7 +125,6 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
     def test_load_several_modules(self):
         moduleN = '''if 1:
             import MeetingPlace
-            print 'haha', __name__
             MeetingPlace.loadedModules.append(__name__)'''
         baseName = 'module%s'
         number_of_modules = 5

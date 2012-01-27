@@ -70,8 +70,8 @@ class GlobalsImporter(object):
         self.fullNames = weakref.WeakValueDictionary()
 
     def find_module(self, fullname, path = None):
-        print 'find_module:', fullname, path
-        print self.fullNames.keys()
+##        print 'find_module:', fullname, path
+##        print self.fullNames.keys()
         loader = self.fullNames.get(fullname, None)
         if loader is not None and loader.acceptImportInModule():
             return loader
@@ -125,7 +125,7 @@ class Loader(object):
                              (self.fullname, fullname))
 
     def executeModule(self, module):
-        print 'executeModule:', self.fullname
+##        print 'executeModule:', self.fullname
         module.__builtins__ = __builtins__
         module.__file__ = self.filename
         module.__loader__ = self
@@ -151,7 +151,6 @@ class Loader(object):
 loaders = []
 
 for moduleName in modules:
-    print 'loader:', moduleName
     loader = Loader(*modules[moduleName])
     loaders.append(loader)
     globalsImporter.addLoader(moduleName, loader)

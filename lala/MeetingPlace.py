@@ -1,0 +1,2 @@
+
+setdefault = globals().setdefault
