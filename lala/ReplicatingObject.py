@@ -18,6 +18,8 @@ class R(object):
 	def __call__(self, *args):
 		raise ThisShallNeverBeCalledError()
 
+__defaultObject = object()
+
 class ReplicatingObject(object):
 
     def __init__(self):
@@ -28,9 +30,9 @@ class ReplicatingObject(object):
         moduleKey = self.getModuleKey(module)
         self.modules[moduleKey] = self.getModuleEntry(module)
 
-    def addCodeDependency(self, code, codeName, locals = {}, \
-                          __package__ = None,  __file__ = ''):
-        self.modules[codeName] = [code, codeName, __package__, __file__]
+    def addCodeDependency(self, code, codeName, locals = {}, **kw):
+        kw.update(locals)
+        self.modules[codeName] = [code, codeName, kw]
 
     def getModuleEntry(self, module):
         filepath = module.__file__
@@ -40,8 +42,8 @@ class ReplicatingObject(object):
             filepath += 'w' # .pyw files
         return [''.join(linecache.getlines(filepath, module.__dict__)), \
                 module.__name__,
-                getattr(module, '__package__'),
-                module.__file__]
+                dict(__package__ = getattr(module, '__package__'),
+                     __file__ = module.__file__)]
 
     def hasModuleDependency(self, module):
         return self.getModuleKey(module) in self.modules
@@ -106,7 +108,7 @@ sys.meta_path.append(globalsImporter)
 
 
 class Loader(object):
-    def __init__(self, source, fullname, package, filename = '<>'):
+    def __init__(self, source, fullname, moduleVars):
         self.__dict__.update(locals())
         self.loaded = False
         self.module = types.ModuleType(fullname)
@@ -131,9 +133,8 @@ class Loader(object):
     def executeModule(self, module):
 ##        print 'executeModule:', self.fullname
         module.__builtins__ = __builtins__
-        module.__file__ = self.filename
         module.__loader__ = self
-        module.__package__ = self.package
+        module.__dict__.update(self.moduleVars)
         code = compile(self.source, self.filename, 'exec')
         exec code in module.__dict__
 
@@ -145,6 +146,10 @@ class Loader(object):
         return compile(self.get_source(fullname), self.filename, 'exec')
     def get_filename(self):
         return self.filename
+
+    @property
+    def filename(self):
+        return self.moduleVars.get('__file__', '<>')
 
     def __eq__(self, other):
         return type(self) == type(other)
