@@ -76,6 +76,10 @@ class PickleStream(Stream):
     def write(self, obj):
         return self._pickler.dump(obj)
 
+    def close(self):
+        self.flush()
+        self.stream.close()
+
 StreamFactory.registerStream(PickleStream, None, StreamFactory.streamArguments)
 
 

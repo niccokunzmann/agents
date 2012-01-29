@@ -207,6 +207,8 @@ def printReferencePath(objects, targets):
         for element in path:
             if type(element) == types.ModuleType:
                 print 'module', element.__name__
+            if type(element) == dict and '__name__' in element:
+                print 'dict of', element['__name__'], str(element)[:60]
             else:
                 print type(element).__name__, str(element)[:60]
 

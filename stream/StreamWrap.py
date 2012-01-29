@@ -63,27 +63,27 @@ def SocketStream(sock):
     f.socket = sock
     return f        
         
-class SocketStream(StreamWrap):
-
-    def getAttributes(self, stream):
-        try:
-            rdbufsize = stream.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
-        except socket.error:
-            rdbufsize = 8096
-        def read(size = rdbufsize):
-            return stream.recv(size)
-        write = stream.sendall
-##        def write(s):
-##            print 'write:', repr(s)
-##            r = sock.send(s)
-##            print len(s), r
-##            return r
-        stream = sock = stream
-        close = stream.close
-##        def close():
-##            print 'closed!', stream
-##            stream.close()
-        return locals()
+##class SocketStream(StreamWrap):
+##
+##    def getAttributes(self, stream):
+##        try:
+##            rdbufsize = stream.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+##        except socket.error:
+##            rdbufsize = 8096
+##        def read(size = rdbufsize):
+##            return stream.recv(size)
+##        write = stream.sendall
+####        def write(s):
+####            print 'write:', repr(s)
+####            r = sock.send(s)
+####            print len(s), r
+####            return r
+##        stream = sock = stream
+##        close = stream.close
+####        def close():
+####            print 'closed!', stream
+####            stream.close()
+##        return locals()
 
 
 def forList(func):

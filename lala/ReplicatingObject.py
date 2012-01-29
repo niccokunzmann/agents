@@ -1,6 +1,6 @@
 
 import sys
-import  os
+import os
 import linecache
 import types
 
@@ -22,9 +22,15 @@ __defaultObject = object()
 
 class ReplicatingObject(object):
 
-    def __init__(self):
+    # if onlyImportFromSameThread is True
+    # only modules launched by this thread will be allowed to import
+    # dependent modules
+    # other agents cannot import own modules with same name accidentially
+    def __init__(self, onlyImportFromSameThread = True):
         self.modules = {} # module name : lines
+        self.onlyImportFromSameThread = onlyImportFromSameThread
         self.addModuleDependency(__import__(__name__))
+        self.returnObject = lambda:None
 
     def addModuleDependency(self, module):
         moduleKey = self.getModuleKey(module)
@@ -57,6 +63,12 @@ class ReplicatingObject(object):
     def isModule(self, module):
         return isinstance(module, types.ModuleType)
 
+    def setReturnObject(self, obj, method = '__reduce__', args = (), kw = {}):
+        self.returnObject = lambda: getattr(obj, method)(*args, **kw)
+
+    def getReturnObject(self):
+        return self.returnObject()
+
     def getReplicationCode(self):
         return '''
 locals().update(__import__(__import__.__module__).__dict__)
@@ -66,18 +78,27 @@ __builtins__ = vars(__import__('__builtin__'))
 types = __import__('types')
 sys = __import__('sys')
 weakref = __import__('weakref')
+thread = __import__('thread')
 
+# this is a variable acting like sys.modules
+# but is used only for these modules
 loadedModules = {} # name : Module
-
 
 class GlobalsImporter(object):
 
+    if onlyImportFromSameThread:
+        threadId = thread.get_ident()
+    else:
+        threadId = None
+   
     def __init__(self):
         self.fullNames = weakref.WeakValueDictionary()
 
     def find_module(self, fullname, path = None):
-##        print 'find_module:', fullname, path
+##        print 'find_module:', fullname, path, thread.get_ident(), self.threadId
 ##        print self.fullNames.keys()
+        if self.threadId is not None and thread.get_ident() != self.threadId:
+            return None
         loader = self.fullNames.get(fullname, None)
         if loader is not None and loader.acceptImportInModule():
             return loader
@@ -168,19 +189,20 @@ for loader in loaders:
     loader.load_module(loader.fullname)
 
 del loader
-del loaders # donnot drop weak references till the end
-
-obj = None
+del loaders # do not drop weak references till the end
 
 '''
+    def getGlobals(self):
+        return dict(
+            __import__ = __import__,
+            modules = self.modules,
+            locals = locals,
+            onlyImportFromSameThread = self.onlyImportFromSameThread)
 
     def __reduce__(self):
         code = self.getReplicationCode()
-        globalVars = dict(
-            code = code,
-            __import__ = __import__,
-            modules = self.modules,
-            locals = locals)
+        globalVars = self.getGlobals()
+        globalVars['code'] = code
         
         # get the function type
         FunctionType = R(type, R(eval, 'lambda:None'))
@@ -189,6 +211,6 @@ obj = None
         # the final object that can reduce, dump and load itself
         obj = R(R(getattr, tuple, '__getitem__'), (
                 R(R(FunctionType, code, globalVars)),
-                R(R(getattr, globalVars, 'pop'), 'obj')
+                self.getReturnObject()
                 ), -1)
         return obj.__reduce__()
