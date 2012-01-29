@@ -2,4 +2,9 @@
 import Agent
 
 class OtherAgent(Agent.Agent):
-    pass
+
+    def __init__(self, *args):
+        self.args = args
+
+    def getInitArgs(self):
+        return self.args

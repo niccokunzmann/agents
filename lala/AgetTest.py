@@ -11,7 +11,7 @@ class AgentReduceTestCase(unittest.TestCase):
 
     def setUp(self):
         self.agent = Agent.Agent()
-        self.red = self.agent.getReducableRepresentation()
+        self.red = self.agent.getReducableRepresentation(())
 
     def test_can_reduce(self):
         self.assertNotEqual(self.agent.__reduce__(), None)
@@ -28,7 +28,7 @@ class AgentReduceTestCase(unittest.TestCase):
         modules = self.red.getModulesReferencedByAgent()
         self.assertIn(Agent, modules)
 
-class AgentTransitTest(unittest.TestCase):
+class AgentTransitBaseTest(unittest.TestCase):
 
     def setUp(self):
         while sys.meta_path:
@@ -43,7 +43,9 @@ class AgentTransitTest(unittest.TestCase):
         self.assertNotEqual(agent2, agent)
         self.assertEquals(type(agent2).__name__, type(agent).__name__)
         self.assertNotEqual(type(agent2), type(agent))
-        
+
+
+class AgentTransitTest(AgentTransitBaseTest):
     def test_otherAgent_transits(self):
         agent = AgentTest2.OtherAgent()
         self.assertOtherClassAfterTransit(agent)
@@ -51,6 +53,19 @@ class AgentTransitTest(unittest.TestCase):
     def test_Agent_transits(self):
         agent = Agent.Agent()
         self.assertOtherClassAfterTransit(agent)
+
+class AgentCreationTest(AgentTransitBaseTest):
+
+    def setUp(self):
+        super(type(self), self).setUp()
+        self.agent = AgentTest2.OtherAgent()
+
+    def test_agent_is_called_with_arguments(self):
+        self.agent.args = (1,2,3)
+        agent2 = cPickle.loads(cPickle.dumps(self.agent))
+        self.assertEqual(agent2.args, self.agent.args)
+        self.assertNotEqual(type(agent2), type(self.agent))
+        
 
 if __name__ == '__main__':
     unittest.main(exit = False, verbosity = 1)

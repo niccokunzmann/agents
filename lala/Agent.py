@@ -3,10 +3,6 @@ from ReplicatingObject import ReplicatingObject, R
 import ReplicatingObject as ReplicatingObjectModule
 import Agent as AgentModule
 
-
-print 'lalala'
-
-
 class ReducableRepresentation(object):
     def __init__(self, agent, function, args):
         self.agent = agent
@@ -47,8 +43,9 @@ class Agent(object):
     def getInitArgs(self):
         return ()
 
-    def getReducableRepresentation(self):
-        return ReducableRepresentation(self, type(self), self.getInitArgs())
+    def getReducableRepresentation(self, args):
+        return ReducableRepresentation(self, type(self), args)
     
     def __reduce__(self):
-        return self.getReducableRepresentation().__reduce__()
+        r = self.getReducableRepresentation(self.getInitArgs())
+        return r.__reduce__()
