@@ -11,12 +11,18 @@ class ThisShallNeverBeCalledError(Exception):
     pass
 
 class R(object):
-	def __init__(self, f, *args):
-		self.ret = (f, args)
-	def __reduce__(self):
-		return self.ret
-	def __call__(self, *args):
-		raise ThisShallNeverBeCalledError()
+    def __init__(self, f, *args):
+        self.ret = (f, args)
+    def __reduce__(self):
+        return self.ret
+    def __call__(self, *args):
+        raise ThisShallNeverBeCalledError()
+
+    @classmethod
+    def fromReduce(cls, value):
+        ret = cls(None)
+        ret.ret = value
+        return ret
 
 _defaultObject = object()
 
@@ -27,10 +33,12 @@ class ReplicatingObject(object):
     # dependent modules
     # other agents cannot import own modules with same name accidentially
     def __init__(self, onlyImportFromSameThread = True):
-        self.modules = {} # module name : lines
         self.onlyImportFromSameThread = onlyImportFromSameThread
-        self.addModuleDependency(__import__(__name__))
+        self.modules = {} # module name : lines
         self.returnObject = lambda:None
+        self.returnCode = ''
+        self.addModuleDependency(__import__(__name__))
+
 
     def addModuleDependency(self, module):
         moduleKey = self.getModuleKey(module)
@@ -72,7 +80,12 @@ like reduce returns'''
         if methodName is _defaultObject:
             self.returnObject = lambda:obj
         else:
-            self.returnObject = lambda:R(*getattr(obj, methodName)(*args, **kw))
+            self.returnObject = lambda:\
+                R.fromReduce(getattr(obj, methodName)(*args, **kw))
+
+    def setReturnCode(self, code):
+        '''this code shall leave a variable 'obj' with the object to return'''
+        self.returnCode = code
 
     def getReturnObject(self):
         return self.returnObject()
@@ -95,17 +108,17 @@ loadedModules = {} # name : Module
 class GlobalsImporter(object):
 
     if onlyImportFromSameThread:
-        threadId = thread.get_ident()
+        threadIds = [thread.get_ident()]
     else:
-        threadId = None
+        threadIds = []
    
     def __init__(self):
         self.fullNames = weakref.WeakValueDictionary()
 
     def find_module(self, fullname, path = None):
-##        print 'find_module:', fullname, path, thread.get_ident(), self.threadId
+##        print 'find_module:', fullname, path, thread.get_ident(), self.threadIds
 ##        print self.fullNames.keys()
-        if self.threadId is not None and thread.get_ident() != self.threadId:
+        if self.threadIds and thread.get_ident() not in self.threadIds:
             return None
         loader = self.fullNames.get(fullname, None)
         if loader is not None and loader.acceptImportInModule():
@@ -137,14 +150,17 @@ sys.meta_path.append(globalsImporter)
 
 
 class Loader(object):
+    createModule = types.ModuleType
+        
     def __init__(self, source, fullname, moduleVars):
         self.__dict__.update(locals())
         self.loaded = False
-        self.module = types.ModuleType(fullname)
+        self.module = self.createModule(fullname)
         self.canBeLoaded = True
 
-    def load_module(self, fullname):
-        self.assertCanLoad(fullname)
+    def load_module(self, fullname = None):
+        if fullname is not None:
+            self.assertCanLoad(fullname)
         if self.loaded: # fix: race condition
             return self.module
         self.loaded = True
@@ -163,6 +179,7 @@ class Loader(object):
 ##        print 'executeModule:', self.fullname
         module.__builtins__ = __builtins__
         module.__loader__ = self
+        module.__name__ = self.fullname
         module.__dict__.update(self.moduleVars)
         code = compile(self.source, self.filename, 'exec')
         exec code in module.__dict__
@@ -194,10 +211,17 @@ for moduleName in modules:
     globalsImporter.addLoader(moduleName, loader)
 
 for loader in loaders:
-    loader.load_module(loader.fullname)
+    loader.load_module()
 
 del loader
 del loaders # do not drop weak references till the end
+
+if returnCode:
+    globalVars = dict(__builtins__ = __builtins__)
+    exec returnCode in globalVars
+    if 'obj' not in globalVars:
+        raise ValueError('return code should set variable obj')
+    obj = globalVars['obj']
 
 '''
     def getGlobals(self):
@@ -205,7 +229,8 @@ del loaders # do not drop weak references till the end
             __import__ = __import__,
             modules = self.modules,
             locals = locals,
-            onlyImportFromSameThread = self.onlyImportFromSameThread)
+            onlyImportFromSameThread = self.onlyImportFromSameThread,
+            returnCode = self.returnCode)
 
     def __reduce__(self):
         code = self.getReplicationCode()
@@ -219,6 +244,7 @@ del loaders # do not drop weak references till the end
         # the final object that can reduce, dump and load itself
         obj = R(R(getattr, tuple, '__getitem__'), (
                 R(R(FunctionType, code, globalVars)),
-                self.getReturnObject()
+                R(R(getattr, dict, 'get'), globalVars, \
+                  'obj', self.getReturnObject())
                 ), -1)
         return obj.__reduce__()

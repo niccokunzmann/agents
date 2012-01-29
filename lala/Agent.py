@@ -3,7 +3,7 @@ import ReplicatingObject
 import Agent as AgentModule
 
 
-
+print 'lalala'
 
 class Agent(object):
 

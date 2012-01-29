@@ -70,7 +70,30 @@ class ReplictionCodeTest(ReplicatedObjectBaseTest):
         self.dump_and_load()
         self.assertEquals(MeetingPlace.loaded, 1)
 
-class ModuleLoaderTest(ReplicatedObjectBaseTest):
+class ReturnCodeTest(ReplicatedObjectBaseTest):
+
+    def setUp(self):
+        self.rep = ReplicatingObject.ReplicatingObject()
+
+    def test_return_code_executes(self):
+        self.rep.setReturnCode('obj = 1')
+        self.assertEquals(self.dump_and_load(), 1)
+
+    def test_return_code_executes2(self):
+        self.rep.setReturnCode('obj = [1,2,3]')
+        self.assertEquals(self.dump_and_load(), [1,2,3])
+
+    def test_return_code_imports_sys(self):
+        self.rep.setReturnCode('import sys as obj')
+        self.assertEquals(self.dump_and_load(), sys)
+        
+    def test_return_code_imports_sys(self):
+        self.rep.addModuleDependency(ReplicatingObject)
+        del sys.modules[ReplicatingObject.__name__]
+        self.rep.setReturnCode('import ReplicatingObject as obj')
+        self.assertNotEquals(self.dump_and_load(), ReplicatingObject)
+        
+class ModuleLoaderBaseTest(ReplicatedObjectBaseTest):
 
     def setUp(self):
         self.rep = ReplicatingObject.ReplicatingObject()
@@ -92,6 +115,23 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
         self.rep.addModuleDependency(__import__('cache'))
         self.rep.addModuleDependency(__import__(moduleName))
         return self.dump_and_load()
+
+    def assertAllModulesLoaded(self, moduleNames):
+        self.assertEquals(len(MeetingPlace.loadedModules), len(moduleNames))
+        self.assertModulesLoaded(moduleNames)
+
+    def assertModulesLoaded(self, moduleNames):
+        for moduleName in moduleNames:
+            self.assertIn(moduleName, MeetingPlace.loadedModules)
+
+    def importModuleByName(self, moduleName):
+        module = __import__(moduleName, fromlist = [moduleName])
+        self.modulesToDeleteByLoad.append(module.__file__)
+        self.modulesToDeleteByLoad.append(module.__file__+'c')
+        self.modulesToDeleteByLoad.append(module.__file__[:-1])
+        return module
+
+class ModuleLoaderTest(ModuleLoaderBaseTest):
         
     def test_load_someModule(self):
         someModule = '''if 1:
@@ -132,21 +172,6 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
         MeetingPlace.loadedModules = []
         self.dump_and_load()
         self.assertAllModulesLoaded(moduleNames)
-
-    def assertAllModulesLoaded(self, moduleNames):
-        self.assertEquals(len(MeetingPlace.loadedModules), len(moduleNames))
-        self.assertModulesLoaded(moduleNames)
-
-    def assertModulesLoaded(self, moduleNames):
-        for moduleName in moduleNames:
-            self.assertIn(moduleName, MeetingPlace.loadedModules)
-
-    def importModuleByName(self, moduleName):
-        module = __import__(moduleName, fromlist = [moduleName])
-        self.modulesToDeleteByLoad.append(module.__file__)
-        self.modulesToDeleteByLoad.append(module.__file__+'c')
-        self.modulesToDeleteByLoad.append(module.__file__[:-1])
-        return module
             
     def test_loads_modules_only_once(self):
         moduleLoaded = '''if 1:
