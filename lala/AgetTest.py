@@ -11,6 +11,7 @@ class AgentReduceTestCase(unittest.TestCase):
 
     def setUp(self):
         self.agent = Agent.Agent()
+        self.red = self.agent.getReducableRepresentation()
 
     def test_can_reduce(self):
         self.assertNotEqual(self.agent.__reduce__(), None)
@@ -24,7 +25,7 @@ class AgentReduceTestCase(unittest.TestCase):
         self.assertEquals(type(agent).__name__, type(self.agent).__name__)
 
     def test_referencedModulesByAgentIncludesAgent(self):
-        modules = self.agent.getModulesReferencedByAgent()
+        modules = self.red.getModulesReferencedByAgent()
         self.assertIn(Agent, modules)
 
 class AgentTransitTest(unittest.TestCase):

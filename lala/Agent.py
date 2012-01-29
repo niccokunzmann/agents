@@ -1,11 +1,17 @@
 
-import ReplicatingObject
+from ReplicatingObject import ReplicatingObject, R
+import ReplicatingObject as ReplicatingObjectModule
 import Agent as AgentModule
 
 
 print 'lalala'
 
-class Agent(object):
+
+class ReducableRepresentation(object):
+    def __init__(self, agent, function, args):
+        self.agent = agent
+        self.function = function
+        self.args = args
 
     def __reduce__(self):
         referencedModules = self.getModulesReferencedByAgent()
@@ -15,18 +21,34 @@ class Agent(object):
         replicatingObject = self.getReplicatingObjectForModules(agentModules)
         return replicatingObject.__reduce__()
 
+    def getReducableFunction(self):
+        return R(getattr, R(__import__, self.function.__module__), \
+                        self.function.__name__)
 
-    __reduceAgent__ = object.__reduce__
+    def getReturnObject(self):
+        fct = self.getReducableFunction()
+        return R(fct, *self.args)
     
     def getModulesReferencedByAgent(self):
-        return [AgentModule, ReplicatingObject]
+        return [AgentModule, ReplicatingObjectModule]
 
     def selectPortableModules(self, modules):
         return modules
 
     def getReplicatingObjectForModules(self, modules):
-        replicatingObject = ReplicatingObject.ReplicatingObject()
+        replicatingObject = ReplicatingObject()
         for module in modules:
             replicatingObject.addModuleDependency(module)
-        replicatingObject.setReturnObject(self, '__reduceAgent__')
+        replicatingObject.setReturnObject(self.getReturnObject())
         return replicatingObject
+
+class Agent(object):
+
+    def getInitArgs(self):
+        return ()
+
+    def getReducableRepresentation(self):
+        return ReducableRepresentation(self, type(self), self.getInitArgs())
+    
+    def __reduce__(self):
+        return self.getReducableRepresentation().__reduce__()
