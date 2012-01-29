@@ -18,7 +18,7 @@ class R(object):
 	def __call__(self, *args):
 		raise ThisShallNeverBeCalledError()
 
-__defaultObject = object()
+_defaultObject = object()
 
 class ReplicatingObject(object):
 
@@ -63,8 +63,16 @@ class ReplicatingObject(object):
     def isModule(self, module):
         return isinstance(module, types.ModuleType)
 
-    def setReturnObject(self, obj, method = '__reduce__', args = (), kw = {}):
-        self.returnObject = lambda: getattr(obj, method)(*args, **kw)
+    def setReturnObject(self, obj, methodName = _defaultObject, args = (), kw = {}):
+        '''set the object to return
+if method is given obj.<methodName> will be called instead of obj.__reduce__ but
+the return value should be
+(callableFunction, args, ...) # see the python manual
+like reduce returns'''
+        if methodName is _defaultObject:
+            self.returnObject = lambda:obj
+        else:
+            self.returnObject = lambda:R(*getattr(obj, methodName)(*args, **kw))
 
     def getReturnObject(self):
         return self.returnObject()

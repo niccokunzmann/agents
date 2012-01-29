@@ -26,6 +26,12 @@ class ReplicatedObjectBaseTest(unittest.TestCase):
         return loads(s)
 
 
+class ReplicatedObjectReduceTest(ReplicatedObjectBaseTest):
+    def test_dumpsAndLoads_objects(self):
+        for obj in [(1,2,3), 1, object, None]:
+            self.rep.setReturnObject(obj)
+            self.assertEquals(self.dump_and_load(), obj)
+
 class ReplicatedObjectTest(ReplicatedObjectBaseTest):
 
     def test_compiles_without_warning(self):
@@ -60,23 +66,9 @@ class ReplictionCodeTest(ReplicatedObjectBaseTest):
     def test_loaded_after_dump_and_load(self):
         self.rep.setReplicationCode('''if 1:
             MeetingPlace = __import__('MeetingPlace')
-            MeetingPlace.loaded = 1
-            obj = None''')
+            MeetingPlace.loaded = 1''')
         self.dump_and_load()
         self.assertEquals(MeetingPlace.loaded, 1)
-
-    def test_modules_are_transferred_no_modules(self):
-        self.assertModulesDumpedAndLoaded({})
-
-    def test_modules_are_transferred_a_test_list(self):
-        self.assertModulesDumpedAndLoaded([1,2,3])
-
-    def assertModulesDumpedAndLoaded(self, modules):
-        self.rep.modules = modules
-        self.rep.setReplicationCode('''if 1:
-            obj = modules''')
-        modulesDumpedAndLoaded = self.dump_and_load()
-        self.assertEquals(modulesDumpedAndLoaded, modules)
 
 class ModuleLoaderTest(ReplicatedObjectBaseTest):
 
@@ -156,7 +148,7 @@ class ModuleLoaderTest(ReplicatedObjectBaseTest):
         self.modulesToDeleteByLoad.append(module.__file__[:-1])
         return module
             
-    def test_loads_modules_only_ones(self):
+    def test_loads_modules_only_once(self):
         moduleLoaded = '''if 1:
             import MeetingPlace
             import cache.moduleLoaded

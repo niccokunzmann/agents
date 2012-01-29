@@ -19,6 +19,7 @@ class AgentReduceTestCase(unittest.TestCase):
 
     def test_agent_dump_load_to_agent(self):
         agent = cPickle.loads(cPickle.dumps(self.agent))
+        print agent
         self.assertEquals(type(agent).__name__, type(self.agent).__name__)
 
     def test_referencedModulesByAgentIncludesAgent(self):

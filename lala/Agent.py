@@ -11,8 +11,9 @@ class Agent(object):
         referencedModules = self.getModulesReferencedByAgent()
 ##        referencedModules = \
 ##            self.getModulesReferencedbyClassModules(referencedModules)
-        agentModules = self.selectPortableModules(referencesModules)
-        return self.getReplicatingObjectForModules(agentModules)
+        agentModules = self.selectPortableModules(referencedModules)
+        replicatingObject = self.getReplicatingObjectForModules(agentModules)
+        return replicatingObject.__reduce__()
 
 
     __reduceAgent__ = object.__reduce__
