@@ -66,13 +66,32 @@ class AgentCreationTest(AgentTransitBaseTest):
         self.assertEqual(agent2.args, self.agent.args)
         self.assertNotEqual(type(agent2), type(self.agent))
 
-    def test_Agent_can_bePickles_several_times(self):
+    def test_Agent_can_bePickled_several_times(self):
         self.agent.args = (1,2,3)
         agent2 = cPickle.loads(cPickle.dumps(self.agent))
         for i in range(100):
             agent2 = cPickle.loads(cPickle.dumps(agent2))
         self.assertEqual(agent2.args, self.agent.args)
         self.assertNotEqual(type(agent2), type(self.agent))
+
+class PickleUnknownAgents(AgentTransitBaseTest):
+    
+    def test_Agent3(self):
+        import Agent3
+        agent = Agent3.Agent3()
+        self.assertTransits(agent)
+
+    def test_Agent4(self):
+        import Agent3
+        agent = Agent3.Agent4()
+        self.assertTransits(agent)
+
+    def assertTransits(self, agent):
+        agent2 = cPickle.loads(cPickle.dumps(agent))
+        self.assertEqual(agent2.args, agent.args)
+        self.assertNotEqual(type(agent2), type(agent))
+        self.assertEqual(type(agent2).__name__, type(agent).__name__)
+        
         
 
 if __name__ == '__main__':
