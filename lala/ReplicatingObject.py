@@ -11,8 +11,10 @@ class ThisShallNeverBeCalledError(Exception):
     pass
 
 class R(object):
-    def __init__(self, f, *args):
+    def __init__(self, f, *args, state = None):
         self.ret = (f, args)
+        if state is not None:
+            self.ret += (state,)
     def __reduce__(self):
         return self.ret
     def __call__(self, *args):
@@ -116,8 +118,8 @@ class GlobalsImporter(object):
         self.fullNames = weakref.WeakValueDictionary()
 
     def find_module(self, fullname, path = None):
-##        print 'find_module:', fullname, path, thread.get_ident(), self.threadIds
-##        print self.fullNames.keys()
+        print 'find_module:', fullname, path, thread.get_ident(), self.threadIds
+        print self.fullNames.keys()
         if self.threadIds and thread.get_ident() not in self.threadIds:
             return None
         loader = self.fullNames.get(fullname, None)
