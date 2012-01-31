@@ -90,7 +90,8 @@ class PickleUnknownAgentsTest(AgentTransitBaseTest):
 
     def assertTransits(self, agent):
         s = cPickle.dumps(agent)
-        sys.modules.pop('Agent3', None)
+        for module in agent.requiredModules():
+            sys.modules.pop(module.__name__, None)
         agent2 = cPickle.loads(s)
         self.assertNotEqual(type(agent2), type(agent))
         self.assertEqual(type(agent2).__name__, type(agent).__name__)
