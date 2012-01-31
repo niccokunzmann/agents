@@ -11,7 +11,6 @@ class AgentReduceTestCase(unittest.TestCase):
 
     def setUp(self):
         self.agent = Agent.Agent()
-        self.red = self.agent.getReducableRepresentation(())
 
     def test_can_reduce(self):
         self.assertNotEqual(self.agent.__reduce__(), None)
@@ -25,7 +24,7 @@ class AgentReduceTestCase(unittest.TestCase):
         self.assertEquals(type(agent).__name__, type(self.agent).__name__)
 
     def test_referencedModulesByAgentIncludesAgent(self):
-        modules = self.red.getModulesReferencedByAgent()
+        modules = self.agent.requiredModules()
         import Agent
         self.assertIn(Agent, modules)
 
@@ -44,7 +43,6 @@ class AgentTransitBaseTest(unittest.TestCase):
         self.assertNotEqual(agent2, agent)
         self.assertEquals(type(agent2).__name__, type(agent).__name__)
         self.assertNotEqual(type(agent2), type(agent))
-
 
 class AgentTransitTest(AgentTransitBaseTest):
     def test_otherAgent_transits(self):
@@ -81,8 +79,6 @@ class PickleUnknownAgentsTest(AgentTransitBaseTest):
 
     def setUp(self):
         super(type(self), self).setUp()
-##        import Agent3
-##        del sys.modules[Agent3.__name__]
     
     def test_Agent3(self):
         agent = Agent3.Agent3()
@@ -93,27 +89,19 @@ class PickleUnknownAgentsTest(AgentTransitBaseTest):
         self.assertTransits(agent)
 
     def assertTransits(self, agent):
-        agent2 = cPickle.loads(cPickle.dumps(agent))
+        s = cPickle.dumps(agent)
+        sys.modules.pop('Agent3', None)
+        agent2 = cPickle.loads(s)
         self.assertNotEqual(type(agent2), type(agent))
         self.assertEqual(type(agent2).__name__, type(agent).__name__)
         self.assertNotEqual(agent2.getModule(), sys.modules.get(agent2.__module__))
-##        self.fail('module duerfen nicht in sys.modules sein')
 
     def test_module_Agent3_in_transit_list(self):
+        import Agent3
         agent = Agent3.Agent3()
-        pic = agent.getReducableRepresentation(())
-        self.assertIn(Agent3, pic.getModulesReferencedByAgent())
-        rep = pic.getReducableRepresentation()
-        self.assertTrue(rep.hasModuleDependency(Agent3))
+        self.assertIn(Agent3, agent.requiredModules())
         
         
-##del PickleUnknownAgentsTest
-
-class ReducableRepresentationTest(unittest.TestCase):
-
-    def test_must_be_implemented(self):
-        self.fail()
-
 
 
 if __name__ == '__main__':

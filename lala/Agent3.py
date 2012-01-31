@@ -8,3 +8,18 @@ class Agent3(Agent.Agent):
 
 class Agent4(AgentTest2.OtherAgent):
     pass
+
+
+class ReplyingAgent(Agent.Agent):
+    def __init__(self, reply = None):
+        self.reply = reply
+
+    def __getstate__(self):
+        return self.reply
+
+    def __setstate__(self, reply):
+        self.reply = reply
+
+
+
+

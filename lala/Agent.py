@@ -6,17 +6,17 @@ see http://docs.python.org/library/pickle.html#the-pickle-protocol \n
 '''
 
 
-from ReplicatingObject import ReplicatingObject, R
-import ReplicatingObject as ReplicatingObjectModule
-import Agent as AgentModule
+import ReplicatingObject
 import sys
 
-def buildAgent(callable, arguments):
-    'build an agent from arguments returned by pickle\n'\
-    ''\
-    'for more information about the pickle protocol'
-    
-    
+R = ReplicatingObject.R
+
+class S(R):
+    'this object reduces with a state\n'\
+    '__reduce__() => (callable, args, state)'
+    def __init__(self, state, *args):
+        super(type(self), self).__init__(self, *args)
+        self.rep += (state,)
 
 class AgentReducer(object):
     'This class reduces Agents to a pickleable representation\n'\
@@ -39,9 +39,9 @@ class AgentReducer(object):
         return R(getattr, R(__import__, callable.__module__), \
                           callable.__name__)
 
-    def callOrRaiseOrNone(self, funcname, default):
-        'helper method to get optional pickle protocol functions\n'\
-        'like __getstate__(), __getinitargs__()'
+    def callOrRaiseOrDefault(self, funcname, default):
+        'helper method to get optional pickle protocol functions:\n'\
+        '\t__getstate__(), __getinitargs__()'
         func = getattr(self.agent, funcname, None)
         if func is None:
             return default
@@ -54,28 +54,29 @@ class AgentReducer(object):
         'return the pickleable representation of the agent\n'\
         'this representation is returned by the unpickler'
         default = []
-        argments = self.callOrRaiseOrDefault('__getinitargs__', default)
+        arguments = self.callOrRaiseOrDefault('__getinitargs__', default)
         if arguments is default:
-            argument = ()
+            arguments = ()
         state = self.callOrRaiseOrDefault('__getstate__', default)
         if state is default:
             return R(self.getReducableCallable(), *arguments)
-        return R(self.getReducableCallable(), *arguments, state = state)
+        return S(self.getReducableCallable(), state, *arguments)
+
+    def __reduce__(self):
+        return self.getReturnObject().__reduce__()
 
 class ModuleFinder(object):
 
     def __init__(self, agent):
+        'this finder finds all modules the agent depends on'
         self.agent = agent
     
-    def getReducableRepresentation(self):
-        'returns the final picklable representation\n'\
-        'the returned object can finally be reduced'
+    def findModules(self):
+        'return the modules referenced by agent and required for transition'
         referencedModules = self.getModulesReferencedByAgent()
 ##        referencedModules = \
 ##            self.getModulesReferencedbyClassModules(referencedModules)
-        agentModules = self.selectPortableModules(referencedModules)
-        replicatingObject = self.getReplicatingObjectForModules(agentModules)
-        return replicatingObject
+        return self.selectPortableModules(referencedModules)
 
     def getModulesReferencedByAgent(self):
         '=> list of modules'
@@ -88,7 +89,11 @@ class ModuleFinder(object):
         'type => list of modules'
         if cls == object:
             return []
-        return cls.getRequiredModules()
+        modules = cls.getRequiredModules()
+        clsmod = cls.getModule()
+        if clsmod is not None:
+            modules.append(clsmod)
+        return modules
 
     def selectPortableModules(self, modules):
         'list of modules => list of modules'
@@ -114,14 +119,21 @@ class ModuleFinder(object):
             i += 1
         return list
 
-class AgentBase(object):
+class Agent(object):
+    ModuleFinderClass = ModuleFinder
+    AgentReducerClass = AgentReducer
+        
     @classmethod
     def getRequiredModules(cls):
-        return [ReplicatingObject]
+        return []
 
     @classmethod
     def getModule(cls):
-        '''return the module the class is in'''
+        'return the module the class is in\n'\
+        'be careful when overwriting this - subclasses will inherit\n'\
+        'to add new required modules overwrite getRequiredModues()\n'\
+        'if the module this class is in is not required\n'\
+        'return None'
         mod = __import__(cls.__module__)
         if getattr(mod, cls.__name__, None) == cls:
             return mod
@@ -134,18 +146,17 @@ class AgentBase(object):
                     if '__loader__' in glob and \
                        hasattr(glob['__loader__'], 'get_module'):
                         print 'ja!'
-                        return [glob['__loader__'].get_module(cls.__module__)]
+                        return glob['__loader__'].get_module(cls.__module__)
         return mod
 
-class Agent(object):
-        
     @classmethod
     def getRequiredModules(cls):
-        '''get the modules required for this class to transit'''
-        return [cls.getModule()]
+        'get the modules required for this class to transit\n'\
+        ''
+        return []
 
     def __getinitargs__(self):
-        '''return the arguments the class is initiialized with'''
+        'return the arguments the class is initialized with'
         return ()
 
     def getReducableRepresentation(self):
@@ -159,12 +170,13 @@ class Agent(object):
 
     def requiredModules(self):
         'return te modules required and referenced by this agent'
-        return self.ModuleFinder(self).findModules()
+        return self.ModuleFinderClass(self).findModules()
 
     def getReturnObject(self):
         'return a reducable representation of this agent'
-        return AgentReducer(self, type(self))
+        return self.AgentReducerClass(self, type(self))
     
     def __reduce__(self):
+        'return the reduced reducable representation of this agent'
         r = self.getReducableRepresentation()
         return r.__reduce__()

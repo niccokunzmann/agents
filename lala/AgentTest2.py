@@ -6,5 +6,5 @@ class OtherAgent(Agent.Agent):
     def __init__(self, *args):
         self.args = args
 
-    def getInitArgs(self):
+    def __getinitargs__(self):
         return self.args

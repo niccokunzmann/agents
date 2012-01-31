@@ -11,10 +11,8 @@ class ThisShallNeverBeCalledError(Exception):
     pass
 
 class R(object):
-    def __init__(self, f, *args, state = None):
+    def __init__(self, f, *args):
         self.ret = (f, args)
-        if state is not None:
-            self.ret += (state,)
     def __reduce__(self):
         return self.ret
     def __call__(self, *args):
