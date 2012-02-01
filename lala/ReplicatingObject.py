@@ -126,7 +126,7 @@ class GlobalsImporter(object):
         return None
 
     def checkForDelete(self):
-        for fullname in self.fullNames:
+        for fullname in self.fullNames.keys():
             if self.fullNames.has_key(fullname):
                 return
         self.delete()

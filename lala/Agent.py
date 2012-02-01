@@ -15,8 +15,9 @@ class S(R):
     'this object reduces with a state\n'\
     '__reduce__() => (callable, args, state)'
     def __init__(self, state, *args):
-        super(type(self), self).__init__(self, *args)
-        self.rep += (state,)
+        R.__init__(self, *args)
+        self.ret += (state,)
+        print '!!!!!!', self.ret
 
 class AgentReducer(object):
     'This class reduces Agents to a pickleable representation\n'\
@@ -178,5 +179,6 @@ class Agent(object):
     
     def __reduce__(self):
         'return the reduced reducable representation of this agent'
+##        print '__reduce__'
         r = self.getReducableRepresentation()
         return r.__reduce__()

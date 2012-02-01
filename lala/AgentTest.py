@@ -101,6 +101,13 @@ class PickleUnknownAgentsTest(AgentTransitBaseTest):
         import Agent3
         agent = Agent3.Agent3()
         self.assertIn(Agent3, agent.requiredModules())
+
+    def test_state_is_set(self):
+        agent = Agent3.StatefulAgent('lalilu')
+        s = cPickle.dumps(agent)
+        agent2 = cPickle.loads(s)
+        self.assertEquals(agent2.reply, 'lalilu')
+        
         
         
 
