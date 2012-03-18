@@ -116,8 +116,8 @@ class GlobalsImporter(object):
         self.fullNames = weakref.WeakValueDictionary()
 
     def find_module(self, fullname, path = None):
-        print 'find_module:', fullname, path, thread.get_ident(), self.threadIds
-        print self.fullNames.keys()
+##        print 'find_module:', fullname, path, thread.get_ident(), self.threadIds
+##        print self.fullNames.keys()
         if self.threadIds and thread.get_ident() not in self.threadIds:
             return None
         loader = self.fullNames.get(fullname, None)

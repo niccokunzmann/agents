@@ -17,7 +17,7 @@ else:
             break
         sys.path.append(path)
 
-from RemoteTestCase import wrapSocketForPickle, createPickleConnection
+from pickleConnection import wrapSocketForPickle, createPickleConnection
 
 class SimplePickleServer(ThreadingTCPServer):
 

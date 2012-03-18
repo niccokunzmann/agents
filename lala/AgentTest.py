@@ -105,8 +105,15 @@ class PickleUnknownAgentsTest(AgentTransitBaseTest):
     def test_state_is_set(self):
         agent = Agent3.StatefulAgent('lalilu')
         s = cPickle.dumps(agent)
+##        print s
         agent2 = cPickle.loads(s)
         self.assertEquals(agent2.reply, 'lalilu')
+
+    def test_first_element_of_reduce_is_callable(self):
+        agent = Agent3.StatefulAgent('lalilu')
+        tuple = agent.__reduce__()
+        self.assertTrue(callable(tuple[0]), str(tuple) + \
+                        ' first argument should be callable')
         
         
         

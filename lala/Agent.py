@@ -17,7 +17,6 @@ class S(R):
     def __init__(self, state, *args):
         R.__init__(self, *args)
         self.ret += (state,)
-        print '!!!!!!', self.ret
 
 class AgentReducer(object):
     'This class reduces Agents to a pickleable representation\n'\
@@ -61,7 +60,7 @@ class AgentReducer(object):
         state = self.callOrRaiseOrDefault('__getstate__', default)
         if state is default:
             return R(self.getReducableCallable(), *arguments)
-        return S(self.getReducableCallable(), state, *arguments)
+        return S(state, self.getReducableCallable(), *arguments)
 
     def __reduce__(self):
         return self.getReturnObject().__reduce__()
@@ -146,7 +145,6 @@ class Agent(object):
                     glob = attr.func_globals
                     if '__loader__' in glob and \
                        hasattr(glob['__loader__'], 'get_module'):
-                        print 'ja!'
                         return glob['__loader__'].get_module(cls.__module__)
         return mod
 
@@ -179,6 +177,5 @@ class Agent(object):
     
     def __reduce__(self):
         'return the reduced reducable representation of this agent'
-##        print '__reduce__'
         r = self.getReducableRepresentation()
         return r.__reduce__()
