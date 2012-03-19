@@ -8,6 +8,8 @@ import random
 import thread
 import time
 
+from SimplePickleServerController import closeDedicatedServer, startDedicatedServer
+
 class SimplePickleServerBaseTestCase(unittest.TestCase):
     
     def setUp(self):
@@ -15,11 +17,11 @@ class SimplePickleServerBaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         for address in self.server_addresses:
-            SimplePickleServer.closeDedicatedServer(address)
+            closeDedicatedServer(address)
 
 
     def startOnAddr(self, addr):
-        self.server_address = server_address = SimplePickleServer.startDedicatedServer(addr)
+        self.server_address = server_address = startDedicatedServer(addr)
         self.server_addresses.append(server_address)
         self.assertNotEqual(server_address[1], 0)
         if addr[1] != 0:
@@ -30,6 +32,7 @@ class SimplePickleServerBaseTestCase(unittest.TestCase):
 class SimplePickleServerStartTest(SimplePickleServerBaseTestCase):
 
     serverCloseTime = 0.3
+    serverCloseTimeMore = 6
 
     def test_start_onPort(self):
         self.startOnAddr(('127.0.0.1', random.randint(10000, 60000)))
@@ -42,7 +45,16 @@ class SimplePickleServerStartTest(SimplePickleServerBaseTestCase):
 
     def test_server_closes(self):
         addr = self.start_server()
-        SimplePickleServer.closeDedicatedServer(addr)
+        closeDedicatedServer(addr)
+        def fails_with_socket_error():
+            time.sleep(self.serverCloseTime)
+            RemoteTestCase.createPickleConnection(addr, timeout = 1)
+        self.assertRaises(socket.error, fails_with_socket_error)
+
+    def test_server_closes_after_some_more_time(self):
+        addr = self.start_server()
+        time.sleep(self.serverCloseTimeMore)
+        closeDedicatedServer(addr)
         def fails_with_socket_error():
             time.sleep(self.serverCloseTime)
             RemoteTestCase.createPickleConnection(addr, timeout = 1)
@@ -59,7 +71,7 @@ class SimplePickleServerStartTest(SimplePickleServerBaseTestCase):
         server.server_close = server_close
         port = server.server_address[1]
         thread.start_new(server.serve_forever, ())
-        SimplePickleServer.closeDedicatedServer(('127.0.0.1', port))
+        closeDedicatedServer(('127.0.0.1', port))
         time.sleep(self.serverCloseTime)
         self.assertEquals(closed, [1], 'the server is closed')
 

@@ -1,10 +1,11 @@
 from SocketServer import ThreadingTCPServer, StreamRequestHandler
-import cPickle
+
 import traceback
 import sys
 import MeetingPlace
 import os
 import socket
+import thread
 
 try:
     path = __file__
@@ -17,7 +18,7 @@ else:
             break
         sys.path.append(path)
 
-from pickleConnection import wrapSocketForPickle, createPickleConnection
+from pickleConnection import wrapSocketForPickle
 
 class SimplePickleServer(ThreadingTCPServer):
 
@@ -36,7 +37,11 @@ class PickleRequestHandler(StreamRequestHandler):
 
     def intoMeetingPlace(self):
         MeetingPlace.setdefault('connections', dict())
-        MeetingPlace.connections[self.client_address] = self.objectStream
+        MeetingPlace.setdefault('connections_by_threadid', dict())
+        connection = self.objectStream
+        MeetingPlace.connections[self.client_address] = connection
+        MeetingPlace.last_connection = connection
+        MeetingPlace.connections_by_threadid[thread.get_ident()] = connection
         
     def handle(self):
         while 1:
@@ -47,8 +52,11 @@ class PickleRequestHandler(StreamRequestHandler):
                 traceback.print_exc()
 
     def handleOneRequest(self):
-        self.objectStream.update()
-        result = self.objectStream.read()
+        try:
+            self.objectStream.update()
+            result = self.objectStream.read()
+        except (socket.error, EOFError):
+            return 'break'
         ret = None
         if 'close' in result:
             ret = 'break'
@@ -57,38 +65,7 @@ class PickleRequestHandler(StreamRequestHandler):
             ret = 'break'
         return ret
 
-def startDedicatedServer(address = ('127.0.0.1', 0)):
-    'start a server \n' \
-    '=> (host, port)'
-    import subprocess
-    import re
-    import select
-    executable = sys.executable
-    if executable.lower().endswith('w.exe'):
-        executable = executable[:-5] + executable[-4:]
-    p = subprocess.Popen([executable, __file__, \
-                          str(address[0]), str(address[1])],
-                         stdout = subprocess.PIPE, \
-                         stdin = subprocess.PIPE, \
-                         stderr = subprocess.PIPE, \
-                         )
-    line = p.stdout.readline()
-    host, port = line.rstrip().split(' ')[-1].rsplit(':')
-    p.stdin.close()
-    p.stderr.close()
-    p.stdout.close()
-    return host, int(port)
-
-def closeDedicatedServer(address, *args, **kw):
-    'close a server'
-    try:
-        connection = createPickleConnection(address, *args, **kw)
-    except socket.error:
-        return
-    else:
-        connection.write('shutdown')
-        connection.close()
-
+    
 
 def main(argv = sys.argv, ServerClass = SimplePickleServer, \
          RequestHandlerClass = PickleRequestHandler):
@@ -109,6 +86,7 @@ def main(argv = sys.argv, ServerClass = SimplePickleServer, \
     print 'sever listening on %s:%i\r\n' % (HOST, server.server_address[1])
     sys.stdout.flush()
 
+    
     MeetingPlace.setdefault('server', [])
     MeetingPlace.server.append(server)
     
@@ -119,4 +97,4 @@ if __name__ == '__main__':
         main()
     finally:
         print
-    
+        
